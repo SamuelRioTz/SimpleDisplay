@@ -94,10 +94,10 @@ struct SettingsView: View {
                             HStack(spacing: 8) {
                                 Image(systemName: "exclamationmark.triangle.fill")
                                     .foregroundStyle(.red)
-                                Text(verbatim: "Clean \(ghostCount) ghost profiles?")
+                                Text(verbatim: "Clean \(ghostCount) cached profiles?")
                                     .font(.callout).fontWeight(.medium)
                             }
-                            Text("Removes cached color profiles from deleted virtual displays. Requires admin password. Restart recommended after.")
+                            Text("Removes all cached display color profiles and resets display preferences. Requires admin password. Restart recommended after.")
                                 .font(.caption2)
                                 .foregroundStyle(.secondary)
                             HStack {
@@ -138,7 +138,7 @@ struct SettingsView: View {
                                                 .font(.caption2)
                                                 .foregroundStyle(.green)
                                         } else {
-                                            Text(verbatim: "Remove ghost profiles left by deleted virtual displays.")
+                                            Text(verbatim: "Remove all cached display profiles. Fixes color issues.")
                                                 .font(.caption2)
                                                 .foregroundStyle(.secondary)
                                         }
@@ -237,24 +237,20 @@ struct SettingsView: View {
     }
 
     private func cleanSystemCache() {
-        let keepNames = Set(viewModel.displays.filter { !$0.isVirtual }.map { $0.name })
         let profilesDir = "/Library/ColorSync/Profiles/Displays"
 
-        let allowedChars = CharacterSet.alphanumerics.union(.whitespaces).union(CharacterSet(charactersIn: ".-_()"))
+        let allowedChars = CharacterSet.alphanumerics.union(.whitespaces).union(CharacterSet(charactersIn: ".-_()\""))
         var filesToRemove: [String] = []
         if let files = try? FileManager.default.contentsOfDirectory(atPath: profilesDir) {
             for file in files where file.hasSuffix(".icc") {
-                let parts = file.dropLast(4)
-                let name = extractDisplayName(from: String(parts))
-                if !keepNames.contains(name),
-                   file.unicodeScalars.allSatisfy({ allowedChars.contains($0) }) {
+                if file.unicodeScalars.allSatisfy({ allowedChars.contains($0) }) {
                     filesToRemove.append(file)
                 }
             }
         }
 
         guard !filesToRemove.isEmpty else {
-            cleanupResult = "No ghost profiles found."
+            cleanupResult = "No cached profiles found."
             return
         }
 
@@ -289,26 +285,9 @@ struct SettingsView: View {
     }
 
     private func countGhostProfiles() -> Int {
-        let keepNames = Set(viewModel.displays.filter { !$0.isVirtual }.map { $0.name })
         let profilesDir = "/Library/ColorSync/Profiles/Displays"
         guard let files = try? FileManager.default.contentsOfDirectory(atPath: profilesDir) else { return 0 }
-        return files.filter { file in
-            guard file.hasSuffix(".icc") else { return false }
-            let name = extractDisplayName(from: String(file.dropLast(4)))
-            return !keepNames.contains(name)
-        }.count
-    }
-
-    private func extractDisplayName(from filename: String) -> String {
-        let parts = filename.components(separatedBy: "-")
-        if parts.count >= 6 {
-            let uuidParts = parts.suffix(5)
-            let lengths = uuidParts.map { $0.count }
-            if lengths == [8, 4, 4, 4, 12] {
-                return parts.dropLast(5).joined(separator: "-")
-            }
-        }
-        return parts.first ?? filename
+        return files.filter { $0.hasSuffix(".icc") }.count
     }
 
     private func setLaunchAtLogin(_ enabled: Bool) {

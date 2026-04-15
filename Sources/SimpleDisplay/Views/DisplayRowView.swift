@@ -34,13 +34,21 @@ struct DisplayRowView: View {
 
             VStack(alignment: .leading, spacing: 2) {
                 HStack(spacing: 6) {
+                    if display.isMain {
+                        BadgeView(text: "Main", color: .blue)
+                    } else if display.isActive && !display.isVirtual {
+                        Button {
+                            viewModel.setAsMainDisplay(display)
+                        } label: {
+                            BadgeView(text: "Set Main", color: .secondary)
+                        }
+                        .buttonStyle(.borderless)
+                        .disabled(viewModel.isBusy)
+                    }
                     Text(verbatim: display.name)
                         .font(.callout)
                         .fontWeight(.medium)
                         .foregroundStyle(display.isActive ? .primary : .secondary)
-                    if display.isMain {
-                        BadgeView(text: "Main", color: .blue)
-                    }
                     if display.isVirtual {
                         BadgeView(text: "Virtual", color: .purple)
                     }
