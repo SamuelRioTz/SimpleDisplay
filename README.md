@@ -10,7 +10,7 @@
 
 <p align="center">
   <a href="https://github.com/SamuelRioTz/SimpleDisplay/releases/latest"><img src="https://img.shields.io/github/v/release/SamuelRioTz/SimpleDisplay?sort=semver" alt="Latest Release"></a>
-  <a href="LICENSE"><img src="https://img.shields.io/github/license/SamuelRioTz/SimpleDisplay" alt="License"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/license-GPL--3.0-blue" alt="License"></a>
   <a href="https://github.com/SamuelRioTz/SimpleDisplay/actions/workflows/build.yml"><img src="https://github.com/SamuelRioTz/SimpleDisplay/actions/workflows/build.yml/badge.svg" alt="Build"></a>
   <img src="https://img.shields.io/badge/platform-macOS%2014%2B-blue" alt="Platform">
 </p>
