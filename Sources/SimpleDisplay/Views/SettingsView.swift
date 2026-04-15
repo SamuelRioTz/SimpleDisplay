@@ -47,7 +47,7 @@ struct SettingsView: View {
                     VStack(alignment: .leading, spacing: 3) {
                         Text("SimpleDisplay")
                             .font(.system(.body, weight: .semibold))
-                        Text(verbatim: "Version 1.0.0")
+                        Text(verbatim: "Version \(Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "1.0.0")")
                             .font(.caption2)
                             .foregroundStyle(.secondary)
                     }

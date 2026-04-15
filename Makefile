@@ -21,8 +21,10 @@ debug:
 	@mkdir -p $(OUT_DIR)/$(APP_NAME)-debug.app/Contents/MacOS $(OUT_DIR)/$(APP_NAME)-debug.app/Contents/Resources
 	@cp .build/debug/$(APP_NAME) $(OUT_DIR)/$(APP_NAME)-debug.app/Contents/MacOS/$(APP_NAME)
 	@cp $(INFO_PLIST) $(OUT_DIR)/$(APP_NAME)-debug.app/Contents/Info.plist
+	@/usr/libexec/PlistBuddy -c "Set :CFBundleShortVersionString $(VERSION)" $(OUT_DIR)/$(APP_NAME)-debug.app/Contents/Info.plist
+	@/usr/libexec/PlistBuddy -c "Set :CFBundleVersion $(VERSION)" $(OUT_DIR)/$(APP_NAME)-debug.app/Contents/Info.plist
 	@cp branding/assets/AppIcon.icns $(OUT_DIR)/$(APP_NAME)-debug.app/Contents/Resources/AppIcon.icns
-	@echo "Built $(OUT_DIR)/$(APP_NAME)-debug.app"
+	@echo "Built $(OUT_DIR)/$(APP_NAME)-debug.app ($(VERSION))"
 
 build:
 	swift build -c release --arch arm64 --arch x86_64
@@ -32,8 +34,10 @@ bundle: build
 	@mkdir -p $(MACOS_DIR) $(RESOURCES_DIR)
 	@cp $(BINARY) $(MACOS_DIR)/$(APP_NAME)
 	@cp $(INFO_PLIST) $(CONTENTS)/Info.plist
+	@/usr/libexec/PlistBuddy -c "Set :CFBundleShortVersionString $(VERSION)" $(CONTENTS)/Info.plist
+	@/usr/libexec/PlistBuddy -c "Set :CFBundleVersion $(VERSION)" $(CONTENTS)/Info.plist
 	@cp branding/assets/AppIcon.icns $(RESOURCES_DIR)/AppIcon.icns
-	@echo "Built $(APP_BUNDLE)"
+	@echo "Built $(APP_BUNDLE) ($(VERSION))"
 
 run: debug
 	@open $(OUT_DIR)/$(APP_NAME)-debug.app
