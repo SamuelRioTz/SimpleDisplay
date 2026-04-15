@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#1E90FF"/>
+      <stop offset="100%" style="stop-color:#6C5CE7"/>
+    </linearGradient>
+  </defs>
+  <rect x="16" y="16" width="480" height="480" rx="96" fill="url(#bg)"/>
+  <!-- Monitor -->
+  <rect x="116" y="132" width="280" height="188" rx="14" fill="#FFFFFF" opacity="0.95"/>
+  <!-- Stand -->
+  <rect x="230" y="320" width="52" height="36" rx="4" fill="#FFFFFF" opacity="0.85"/>
+  <rect x="200" y="352" width="112" height="10" rx="5" fill="#FFFFFF" opacity="0.85"/>
+  <!-- Resize corner top-left (inside monitor) -->
+  <line x1="140" y1="156" x2="140" y2="192" stroke="#2563EB" stroke-width="7" stroke-linecap="round"/>
+  <line x1="140" y1="156" x2="176" y2="156" stroke="#2563EB" stroke-width="7" stroke-linecap="round"/>
+  <!-- Resize corner bottom-right (inside monitor) -->
+  <line x1="372" y1="296" x2="372" y2="260" stroke="#7C3AED" stroke-width="7" stroke-linecap="round"/>
+  <line x1="372" y1="296" x2="336" y2="296" stroke="#7C3AED" stroke-width="7" stroke-linecap="round"/>
+</svg>

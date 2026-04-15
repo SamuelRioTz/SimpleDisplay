@@ -1,0 +1,18 @@
+# Build output (app, dmg, binaries all go here)
+.build/
+
+# macOS
+.DS_Store
+
+# SwiftPM
+.swiftpm/
+Package.resolved
+
+# Xcode
+*.xcodeproj
+xcuserdata/
+DerivedData/
+
+# Code signing
+*.p12
+*.keychain-db
