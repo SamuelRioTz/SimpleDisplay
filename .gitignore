@@ -16,3 +16,8 @@ DerivedData/
 # Code signing
 *.p12
 *.keychain-db
+
+# Firebase
+.firebase/
+.firebaserc
+firebase-debug.log
