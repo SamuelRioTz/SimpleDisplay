@@ -9,7 +9,7 @@ RESOURCES_DIR = $(CONTENTS)/Resources
 INFO_PLIST = Info.plist
 DMG_NAME = $(OUT_DIR)/$(APP_NAME).dmg
 DMG_STAGING = $(OUT_DIR)/dmg-staging
-VERSION = 1.0.0
+VERSION ?= $(shell git describe --tags --abbrev=0 2>/dev/null | sed 's/^v//' || echo "1.0.0")
 
 .PHONY: all build bundle run clean debug sign dmg
 
