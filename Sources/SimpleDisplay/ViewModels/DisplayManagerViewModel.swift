@@ -252,6 +252,15 @@ final class DisplayManagerViewModel {
         }
     }
 
+    // MARK: - Color Profile Fix
+
+    /// Re-applies sRGB profiles to all displays to prevent ColorSync CPU loop.
+    /// Called after cleaning the display cache.
+    func fixColorProfiles() {
+        refresh()
+        displayService.fixDuplicateDisplayProfiles(displays: displays)
+    }
+
     // MARK: - Display Change Monitoring
 
     private func registerForDisplayChanges() {

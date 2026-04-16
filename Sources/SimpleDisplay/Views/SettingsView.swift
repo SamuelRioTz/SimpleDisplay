@@ -268,7 +268,13 @@ struct SettingsView: View {
             let escaped = path.replacingOccurrences(of: "'", with: "'\\''")
             return "rm -f '\(escaped)'"
         }
-        let fullCmd = (rmCommands + [
+        // Kill hung ColorSync daemons first, then remove profiles, device cache, and display prefs.
+        // The device cache accumulates ghost entries that cause ColorSync CPU loops.
+        // The daemons auto-restart cleanly after being killed.
+        let fullCmd = ([
+            "killall colorsync.useragent colorsyncd 2>/dev/null; true"
+        ] + rmCommands + [
+            "rm -f '/Library/Caches/ColorSync/com.apple.colorsync.devices'",
             "rm -f /Library/Preferences/com.apple.windowserver.displays.plist"
         ]).joined(separator: " && ")
 
@@ -289,6 +295,8 @@ struct SettingsView: View {
                 }
             } else {
                 cleanupResult = locale.t("cleaned_format", filesToRemove.count)
+                // Re-apply sRGB profiles so restarted daemons don't loop again
+                viewModel.fixColorProfiles()
             }
         }
     }

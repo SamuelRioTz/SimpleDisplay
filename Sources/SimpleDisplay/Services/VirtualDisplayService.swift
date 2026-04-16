@@ -201,6 +201,7 @@ final class VirtualDisplayService {
         let name = displayConfigMap[id].flatMap { configID in
             loadConfigs().first { $0.configID == configID }?.name
         }
+        unregisterColorSyncDevice(for: id)
         if let wrapper = activeDisplays.removeValue(forKey: id) {
             wrapper.invalidate()
         }
@@ -211,6 +212,7 @@ final class VirtualDisplayService {
 
     func removeAll() {
         for (id, wrapper) in activeDisplays {
+            unregisterColorSyncDevice(for: id)
             wrapper.invalidate()
             removeICCProfile(for: id)
         }
@@ -224,6 +226,17 @@ final class VirtualDisplayService {
     }
 
     // MARK: - Color Profile
+
+    /// Unregister a virtual display from the ColorSync device registry.
+    /// Without this, removed displays leave ghost entries in the registry
+    /// that accumulate over time and cause ColorSync daemons to loop.
+    private func unregisterColorSyncDevice(for displayID: CGDirectDisplayID) {
+        guard let cfUUID = CGDisplayCreateUUIDFromDisplayID(displayID)?.takeRetainedValue() else { return }
+        guard let deviceClass = kColorSyncDisplayDeviceClass?.takeUnretainedValue() else { return }
+        if ColorSyncUnregisterDevice(deviceClass, cfUUID) {
+            logger.info("Unregistered ColorSync device for display \(displayID)")
+        }
+    }
 
     /// Assign sRGB profile to a virtual display to prevent colorsync CPU loop.
     /// macOS generates custom profiles for virtual displays and continuously validates them,
@@ -247,7 +260,9 @@ final class VirtualDisplayService {
         )
     }
 
-    /// Remove orphaned ICC profile for a virtual display
+    /// Remove orphaned ICC profile for a virtual display.
+    /// Files in /Library/ColorSync/Profiles/Displays are owned by root,
+    /// so we first try without privileges, then escalate via osascript if needed.
     private func removeICCProfile(for displayID: CGDirectDisplayID) {
         let profilesDir = "/Library/ColorSync/Profiles/Displays"
         guard let cfUUID = CGDisplayCreateUUIDFromDisplayID(displayID)?.takeRetainedValue() else { return }
@@ -255,10 +270,35 @@ final class VirtualDisplayService {
         guard !uuidString.isEmpty else { return }
 
         guard let files = try? FileManager.default.contentsOfDirectory(atPath: profilesDir) else { return }
+        var pathsToRemove: [String] = []
         for file in files where file.hasSuffix(".icc") && file.contains(uuidString) {
-            let path = "\(profilesDir)/\(file)"
-            try? FileManager.default.removeItem(atPath: path)
-            logger.info("Cleaned up ICC profile: \(file)")
+            pathsToRemove.append("\(profilesDir)/\(file)")
+        }
+        guard !pathsToRemove.isEmpty else { return }
+
+        // Try unprivileged removal first
+        var needsEscalation: [String] = []
+        for path in pathsToRemove {
+            do {
+                try FileManager.default.removeItem(atPath: path)
+                logger.info("Cleaned up ICC profile: \(path)")
+            } catch {
+                needsEscalation.append(path)
+            }
+        }
+
+        guard !needsEscalation.isEmpty else { return }
+
+        // Escalate to root via osascript — shows the standard macOS password dialog
+        let escaped = needsEscalation.map { "\\\"" + $0 + "\\\"" }.joined(separator: " ")
+        let script = "do shell script \"rm -f \(escaped)\" with administrator privileges"
+        guard let appleScript = NSAppleScript(source: script) else { return }
+        var error: NSDictionary?
+        appleScript.executeAndReturnError(&error)
+        if let error {
+            logger.warning("Failed to remove ICC profiles with admin privileges: \(error)")
+        } else {
+            logger.info("Removed \(needsEscalation.count) ICC profile(s) with admin privileges")
         }
     }
 
@@ -305,6 +345,7 @@ final class VirtualDisplayService {
     private func pruneTerminatedDisplays() {
         let toRemove = activeDisplays.filter { $0.value.displayID == 0 }
         for (id, _) in toRemove {
+            unregisterColorSyncDevice(for: id)
             activeDisplays.removeValue(forKey: id)
             displayConfigMap.removeValue(forKey: id)
             onDisplayTerminated?(id)
