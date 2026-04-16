@@ -51,8 +51,6 @@ struct VirtualDisplayEditorView: View {
                     resolutionSection
                     Divider()
                     presetsSection
-                    Divider()
-                    settingsSection
                 }
                 .padding(.horizontal, 16)
                 .padding(.vertical, 12)
@@ -147,6 +145,9 @@ struct VirtualDisplayEditorView: View {
                     .textFieldStyle(.roundedBorder)
                     .frame(width: 75)
                 Spacer()
+                Toggle(locale.t("hidpi_retina"), isOn: $hiDPI)
+                    .toggleStyle(.switch)
+                    .controlSize(.small)
             }
 
         }
@@ -218,14 +219,6 @@ struct VirtualDisplayEditorView: View {
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
-    }
-
-    // MARK: - Settings
-
-    @ViewBuilder
-    private var settingsSection: some View {
-        Toggle(locale.t("hidpi_retina"), isOn: $hiDPI)
-            .toggleStyle(.switch)
     }
 
     // MARK: - Bottom Bar

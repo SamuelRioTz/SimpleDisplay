@@ -201,20 +201,22 @@ final class VirtualDisplayService {
         let name = displayConfigMap[id].flatMap { configID in
             loadConfigs().first { $0.configID == configID }?.name
         }
+        // Clean up ColorSync state BEFORE invalidating — the display must still
+        // be alive for CGDisplayCreateUUIDFromDisplayID to resolve the UUID.
         unregisterColorSyncDevice(for: id)
+        removeICCProfile(for: id)
         if let wrapper = activeDisplays.removeValue(forKey: id) {
             wrapper.invalidate()
         }
         removeConfigMatching(id: id)
-        removeICCProfile(for: id)
         logger.info("Removed virtual display\(name.map { " '\($0)'" } ?? "") (ID \(id))")
     }
 
     func removeAll() {
         for (id, wrapper) in activeDisplays {
             unregisterColorSyncDevice(for: id)
-            wrapper.invalidate()
             removeICCProfile(for: id)
+            wrapper.invalidate()
         }
         activeDisplays.removeAll()
         displayConfigMap.removeAll()
