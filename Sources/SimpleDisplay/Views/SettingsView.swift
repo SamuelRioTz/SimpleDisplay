@@ -3,6 +3,7 @@ import SwiftUI
 
 struct SettingsView: View {
     @Environment(DisplayManagerViewModel.self) private var viewModel
+    @Environment(LocaleManager.self) private var locale
     @State private var launchAtLogin: Bool = false
     @State private var loginItemNeedsApproval: Bool = false
     @State private var cleanupResult: String?
@@ -15,7 +16,7 @@ struct SettingsView: View {
         VStack(spacing: 0) {
             // Header
             HStack {
-                Text("Settings")
+                Text(locale.t("settings"))
                     .font(.headline)
                 Spacer()
                 Button {
@@ -45,9 +46,9 @@ struct SettingsView: View {
                             .foregroundStyle(.white)
                     }
                     VStack(alignment: .leading, spacing: 3) {
-                        Text("SimpleDisplay")
+                        Text(verbatim: "SimpleDisplay")
                             .font(.system(.body, weight: .semibold))
-                        Text(verbatim: "Version \(Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "1.0.0")")
+                        Text(verbatim: locale.t("version_format", Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "1.0.0"))
                             .font(.caption2)
                             .foregroundStyle(.secondary)
                     }
@@ -63,7 +64,7 @@ struct SettingsView: View {
                             Toggle(isOn: $launchAtLogin) {
                                 HStack(spacing: 10) {
                                     settingsIcon("power", color: .green)
-                                    Text("Launch at login")
+                                    Text(locale.t("launch_at_login"))
                                         .font(.callout)
                                 }
                             }
@@ -79,7 +80,7 @@ struct SettingsView: View {
                                     Image(systemName: "exclamationmark.triangle.fill")
                                         .font(.system(size: 9))
                                         .foregroundStyle(.orange)
-                                    Text("Requires approval in System Settings > General > Login Items")
+                                    Text(locale.t("login_item_needs_approval"))
                                         .font(.caption2)
                                         .foregroundStyle(.orange)
                                 }
@@ -94,15 +95,15 @@ struct SettingsView: View {
                             HStack(spacing: 8) {
                                 Image(systemName: "exclamationmark.triangle.fill")
                                     .foregroundStyle(.red)
-                                Text(verbatim: "Clean \(ghostCount) cached profiles?")
+                                Text(verbatim: locale.t("clean_confirm_format", ghostCount))
                                     .font(.callout).fontWeight(.medium)
                             }
-                            Text("Removes all cached display color profiles and resets display preferences. Requires admin password. Restart recommended after.")
+                            Text(locale.t("clean_description"))
                                 .font(.caption2)
                                 .foregroundStyle(.secondary)
                             HStack {
                                 Spacer()
-                                Button("Cancel") {
+                                Button(locale.t("cancel")) {
                                     withAnimation { showCleanConfirmation = false }
                                 }
                                 .font(.caption)
@@ -110,7 +111,7 @@ struct SettingsView: View {
                                     cleanSystemCache()
                                     showCleanConfirmation = false
                                 } label: {
-                                    Text(verbatim: "Clean").font(.caption).fontWeight(.medium)
+                                    Text(locale.t("clean")).font(.caption).fontWeight(.medium)
                                 }
                                 .buttonStyle(.borderedProminent)
                                 .tint(.red)
@@ -130,7 +131,7 @@ struct SettingsView: View {
                                 HStack(spacing: 10) {
                                     settingsIcon("paintbrush.fill", color: .red)
                                     VStack(alignment: .leading, spacing: 2) {
-                                        Text("Clean display cache")
+                                        Text(locale.t("clean_display_cache"))
                                             .font(.callout)
                                             .foregroundStyle(.primary)
                                         if let result = cleanupResult {
@@ -138,7 +139,7 @@ struct SettingsView: View {
                                                 .font(.caption2)
                                                 .foregroundStyle(.green)
                                         } else {
-                                            Text(verbatim: "Remove all cached display profiles. Fixes color issues.")
+                                            Text(locale.t("clean_subtitle"))
                                                 .font(.caption2)
                                                 .foregroundStyle(.secondary)
                                         }
@@ -150,13 +151,21 @@ struct SettingsView: View {
                         }
                     }
 
+                    // Language
+                    settingsRow {
+                        HStack(spacing: 10) {
+                            settingsIcon("globe", color: .cyan)
+                            LanguageSwitcherView()
+                        }
+                    }
+
                     // Website
                     settingsRow {
                         if let url = URL(string: "https://simpledisplay.app") {
                             Link(destination: url) {
                                 HStack(spacing: 10) {
                                     settingsIcon("globe", color: .blue)
-                                    Text(verbatim: "Website")
+                                    Text(locale.t("website"))
                                         .font(.callout)
                                         .foregroundStyle(.primary)
                                     Spacer()
@@ -177,7 +186,7 @@ struct SettingsView: View {
                             Link(destination: url) {
                                 HStack(spacing: 10) {
                                     settingsIcon("envelope.fill", color: .indigo)
-                                    Text(verbatim: "Contact")
+                                    Text(locale.t("contact"))
                                         .font(.callout)
                                         .foregroundStyle(.primary)
                                     Spacer()
@@ -196,7 +205,7 @@ struct SettingsView: View {
                 .padding(.horizontal, 12)
 
                 // Footer
-                Text(verbatim: "macOS 14+ \u{2022} Apple Silicon & Intel")
+                Text(verbatim: locale.t("footer_compat"))
                     .font(.caption2)
                     .foregroundStyle(.quaternary)
                     .padding(.top, 14)
@@ -250,7 +259,7 @@ struct SettingsView: View {
         }
 
         guard !filesToRemove.isEmpty else {
-            cleanupResult = "No cached profiles found."
+            cleanupResult = locale.t("no_cached_profiles")
             return
         }
 
@@ -279,7 +288,7 @@ struct SettingsView: View {
                     cleanupResult = "Error: \(msg)"
                 }
             } else {
-                cleanupResult = "Cleaned \(filesToRemove.count) profiles. Restart recommended."
+                cleanupResult = locale.t("cleaned_format", filesToRemove.count)
             }
         }
     }
@@ -300,7 +309,7 @@ struct SettingsView: View {
             let status = SMAppService.mainApp.status
             loginItemNeedsApproval = status == .requiresApproval
         } catch {
-            viewModel.errorMessage = "Failed to update login item: \(error.localizedDescription)"
+            viewModel.errorMessage = locale.t("failed_login_item", error.localizedDescription)
             launchAtLogin = !enabled
         }
     }

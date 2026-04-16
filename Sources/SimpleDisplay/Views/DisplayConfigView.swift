@@ -14,7 +14,16 @@ struct DevicePreset: Identifiable {
         case iphone = "iPhone"
         case ipad = "iPad"
         case mac = "Mac"
-        case tv = "TV & Others"
+        case tv = "tv"
+
+        func localizedName(_ locale: LocaleManager) -> String {
+            switch self {
+            case .iphone: return "iPhone"
+            case .ipad: return "iPad"
+            case .mac: return "Mac"
+            case .tv: return locale.t("preset_tv")
+            }
+        }
     }
 }
 

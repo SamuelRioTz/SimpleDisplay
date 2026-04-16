@@ -43,12 +43,28 @@ struct DisplayMode: Identifiable, Equatable, Hashable {
         return "\(width) x \(height) @ \(formattedRefreshRate)"
     }
 
+    func localizedResolutionString(_ locale: LocaleManager) -> String {
+        let refresh = localizedRefreshRate(locale)
+        if isHiDPI {
+            return "\(width) x \(height) \(locale.t("hidpi_suffix")) @ \(refresh)"
+        }
+        return "\(width) x \(height) @ \(refresh)"
+    }
+
     var shortString: String {
         "\(width) x \(height)"
     }
 
     var formattedRefreshRate: String {
         if refreshRate == 0 { return "default" }
+        if refreshRate.truncatingRemainder(dividingBy: 1) == 0 {
+            return "\(Int(refreshRate)) Hz"
+        }
+        return String(format: "%.1f Hz", refreshRate)
+    }
+
+    func localizedRefreshRate(_ locale: LocaleManager) -> String {
+        if refreshRate == 0 { return locale.t("refresh_default") }
         if refreshRate.truncatingRemainder(dividingBy: 1) == 0 {
             return "\(Int(refreshRate)) Hz"
         }

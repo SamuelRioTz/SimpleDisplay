@@ -4,6 +4,7 @@ import SwiftUI
 /// Pass `editing` to edit an existing display, or nil to create a new one.
 struct VirtualDisplayEditorView: View {
     @Environment(DisplayManagerViewModel.self) private var viewModel
+    @Environment(LocaleManager.self) private var locale
 
     let editing: DisplayInfo?
 
@@ -63,7 +64,7 @@ struct VirtualDisplayEditorView: View {
                     Image(systemName: "exclamationmark.triangle.fill")
                         .font(.system(size: 10))
                         .foregroundStyle(.orange)
-                    Text(verbatim: "Applying changes will recreate the display. Use Settings to clean cached data.")
+                    Text(locale.t("recreate_warning"))
                         .font(.caption2)
                         .foregroundStyle(.secondary)
                 }
@@ -85,10 +86,10 @@ struct VirtualDisplayEditorView: View {
         HStack {
             Image(systemName: "rectangle.dashed")
                 .foregroundStyle(.purple)
-            Text(verbatim: isEditing ? name : "New Virtual Display")
+            Text(verbatim: isEditing ? name : locale.t("new_virtual_display"))
                 .font(.headline)
             if isEditing {
-                BadgeView(text: "Virtual", color: .purple)
+                BadgeView(text: locale.t("badge_virtual"), color: .purple)
             }
             Spacer()
             Button {
@@ -111,9 +112,9 @@ struct VirtualDisplayEditorView: View {
     @ViewBuilder
     private var nameSection: some View {
         VStack(alignment: .leading, spacing: 4) {
-            Text(verbatim: "Display Name")
+            Text(locale.t("display_name"))
                 .font(.caption).foregroundStyle(.secondary)
-            TextField("Virtual Display", text: $name)
+            TextField(locale.t("virtual_display"), text: $name)
                 .textFieldStyle(.roundedBorder)
         }
     }
@@ -125,7 +126,7 @@ struct VirtualDisplayEditorView: View {
         VStack(alignment: .leading, spacing: 6) {
             if isEditing {
                 HStack {
-                    Text(verbatim: "Active")
+                    Text(locale.t("active"))
                         .font(.caption).foregroundStyle(.secondary)
                         .frame(width: 80, alignment: .leading)
                     Spacer()
@@ -135,7 +136,7 @@ struct VirtualDisplayEditorView: View {
             }
 
             HStack {
-                Text(verbatim: "Resolution")
+                Text(locale.t("resolution"))
                     .font(.caption).foregroundStyle(.secondary)
                     .frame(width: 80, alignment: .leading)
                 TextField("W", value: $width, format: .number.grouping(.never))
@@ -156,7 +157,7 @@ struct VirtualDisplayEditorView: View {
     @ViewBuilder
     private var presetsSection: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text(verbatim: "Device Presets")
+            Text(locale.t("device_presets"))
                 .font(.caption).foregroundStyle(.secondary)
 
             HStack(spacing: 4) {
@@ -183,13 +184,13 @@ struct VirtualDisplayEditorView: View {
     private func presetTab(_ cat: DevicePreset.PresetCategory) -> some View {
         if selectedPresetCategory == cat {
             Button { selectedPresetCategory = cat } label: {
-                Text(verbatim: cat.rawValue).font(.caption2)
+                Text(verbatim: cat.localizedName(locale)).font(.caption2)
                     .padding(.horizontal, 8).padding(.vertical, 4)
             }
             .buttonStyle(.borderedProminent).controlSize(.small).tint(.purple)
         } else {
             Button { selectedPresetCategory = cat } label: {
-                Text(verbatim: cat.rawValue).font(.caption2)
+                Text(verbatim: cat.localizedName(locale)).font(.caption2)
                     .padding(.horizontal, 8).padding(.vertical, 4)
             }
             .buttonStyle(.bordered).controlSize(.small).tint(.gray)
@@ -223,7 +224,7 @@ struct VirtualDisplayEditorView: View {
 
     @ViewBuilder
     private var settingsSection: some View {
-        Toggle("HiDPI (Retina)", isOn: $hiDPI)
+        Toggle(locale.t("hidpi_retina"), isOn: $hiDPI)
             .toggleStyle(.switch)
     }
 
@@ -266,7 +267,7 @@ struct VirtualDisplayEditorView: View {
                         )
                     }
                 } label: {
-                    Text(verbatim: "Apply \(width) x \(height)")
+                    Text(verbatim: locale.t("apply_format", width, height))
                         .font(.caption).fontWeight(.medium)
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 4)
@@ -275,7 +276,7 @@ struct VirtualDisplayEditorView: View {
                 .tint(hasChanges && !viewModel.isBusy ? .purple : .gray)
                 .disabled(!hasChanges || viewModel.isBusy)
             } else {
-                Button("Cancel") {
+                Button(locale.t("cancel")) {
                     withAnimation(.easeInOut(duration: 0.2)) {
                         close()
                     }
@@ -287,7 +288,7 @@ struct VirtualDisplayEditorView: View {
                     )
                     viewModel.createVirtualDisplay()
                 } label: {
-                    Text(verbatim: "Create \(width) x \(height)")
+                    Text(verbatim: locale.t("create_format", width, height))
                         .font(.caption).fontWeight(.medium)
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 4)

@@ -55,6 +55,16 @@
         .btn-ghost { background: none; color: var(--muted); border: 1px solid var(--border); }
         .btn-ghost:hover { color: var(--text); border-color: var(--muted); }
 
+        /* Language switcher */
+        .lang-switcher { display: flex; gap: 4px; margin-left: 8px; }
+        .lang-btn {
+            padding: 4px 10px; border-radius: 6px; border: 1px solid var(--border);
+            background: none; color: var(--muted); font-size: 12px; font-weight: 600;
+            cursor: pointer; transition: all 0.2s;
+        }
+        .lang-btn:hover { color: var(--text); border-color: var(--muted); }
+        .lang-btn.active { background: var(--gradient); color: white; border-color: transparent; }
+
         /* Hero */
         .hero { padding: 100px 0 80px; text-align: center; }
         .hero-badge {
@@ -71,9 +81,7 @@
 
         /* Stats */
         .stats { padding: 0 0 80px; }
-        .stats-grid {
-            display: flex; justify-content: center; gap: 48px;
-        }
+        .stats-grid { display: flex; justify-content: center; gap: 48px; }
         .stat { text-align: center; }
         .stat-value { font-size: 28px; font-weight: 800; background: var(--gradient); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; color: transparent; }
         .stat-label { font-size: 13px; color: var(--muted); margin-top: 4px; }
@@ -102,7 +110,7 @@
         .feature-card h3 { font-size: 16px; font-weight: 600; margin-bottom: 8px; }
         .feature-card p { font-size: 13px; color: var(--muted); line-height: 1.6; }
 
-        /* Virtual displays showcase */
+        /* Virtual displays */
         .vd { padding: 80px 0; }
         .vd-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 60px; align-items: center; }
         .vd-content h2 { font-size: 32px; font-weight: 700; margin-bottom: 16px; line-height: 1.2; }
@@ -136,9 +144,7 @@
             background: var(--card); border: 1px solid var(--border);
             border-radius: 16px; padding: 32px; overflow: hidden;
         }
-        .terminal-bar {
-            display: flex; gap: 6px; margin-bottom: 20px;
-        }
+        .terminal-bar { display: flex; gap: 6px; margin-bottom: 20px; }
         .terminal-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--border); }
         .terminal-body {
             background: #0D0D14; border-radius: 10px; padding: 20px;
@@ -204,7 +210,6 @@
         footer p { color: var(--muted); font-size: 12px; }
         footer a { color: var(--blue); text-decoration: none; }
 
-        /* SVG icons */
         .icon { width: 18px; height: 18px; flex-shrink: 0; }
 
         @media (max-width: 768px) {
@@ -218,6 +223,7 @@
             .limitations-grid { grid-template-columns: 1fr; }
             .stats-grid { gap: 32px; }
             .stat-value { font-size: 22px; }
+            .lang-switcher { gap: 2px; }
         }
     </style>
 </head>
@@ -230,30 +236,35 @@
             <span>SimpleDisplay</span>
         </a>
         <div class="nav-links">
-            <a href="#features">Features</a>
-            <a href="#how-it-works">How it works</a>
-            <a href="#get-started">Get started</a>
+            <a href="#features" data-i18n="nav_features">Features</a>
+            <a href="#how-it-works" data-i18n="nav_how">How it works</a>
+            <a href="#get-started" data-i18n="nav_start">Get started</a>
             <a href="https://github.com/SamuelRioTz/SimpleDisplay" class="btn btn-ghost">
                 <svg class="icon" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg>
                 GitHub
             </a>
+            <div class="lang-switcher">
+                <button class="lang-btn active" data-lang="en" onclick="switchLanguage('en')">EN</button>
+                <button class="lang-btn" data-lang="es" onclick="switchLanguage('es')">ES</button>
+                <button class="lang-btn" data-lang="de" onclick="switchLanguage('de')">DE</button>
+            </div>
         </div>
     </div>
 </nav>
 
 <section class="hero">
     <div class="container">
-        <div class="hero-badge">Open Source &middot; GPL-3.0 &middot; macOS 14+</div>
-        <h1>Your displays,<br><span class="grad">under control.</span></h1>
-        <p>A lightweight, open-source macOS menu bar app for managing displays and <strong style="color:var(--text)">creating virtual monitors</strong>.</p>
+        <div class="hero-badge" data-i18n="hero_badge">Open Source &middot; GPL-3.0 &middot; macOS 14+</div>
+        <h1><span data-i18n="hero_title_1">Your displays,</span><br><span class="grad" data-i18n="hero_title_2">under control.</span></h1>
+        <p data-i18n-html="hero_subtitle">A lightweight, open-source macOS menu bar app for managing displays and <strong style="color:var(--text)">creating virtual monitors</strong>.</p>
         <div class="hero-cta">
             <a href="https://github.com/SamuelRioTz/SimpleDisplay/releases/latest/download/SimpleDisplay.dmg" class="btn btn-primary">
                 <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
-                Download for Mac
+                <span data-i18n="hero_download">Download for Mac</span>
             </a>
             <a href="https://github.com/SamuelRioTz/SimpleDisplay" class="btn btn-outline">
                 <svg class="icon" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg>
-                View source
+                <span data-i18n="hero_source">View source</span>
             </a>
         </div>
     </div>
@@ -263,16 +274,16 @@
     <div class="container">
         <div class="stats-grid">
             <div class="stat">
-                <div class="stat-value">&lt; 2 MB</div>
-                <div class="stat-label">App size</div>
+                <div class="stat-value" data-i18n="stat_size">&lt; 2 MB</div>
+                <div class="stat-label" data-i18n="stat_size_label">App size</div>
             </div>
             <div class="stat">
-                <div class="stat-value">GPL-3.0</div>
-                <div class="stat-label">License</div>
+                <div class="stat-value" data-i18n="stat_license">GPL-3.0</div>
+                <div class="stat-label" data-i18n="stat_license_label">License</div>
             </div>
             <div class="stat">
-                <div class="stat-value">Universal</div>
-                <div class="stat-label">Apple Silicon &amp; Intel</div>
+                <div class="stat-value" data-i18n="stat_universal">Universal</div>
+                <div class="stat-label" data-i18n="stat_universal_label">Apple Silicon &amp; Intel</div>
             </div>
         </div>
     </div>
@@ -280,51 +291,51 @@
 
 <section class="features" id="features">
     <div class="container">
-        <div class="section-label">Features</div>
-        <h2 class="section-title">Everything you need, nothing you don't</h2>
-        <p class="section-desc">Simple display management that lives in your menu bar and stays out of the way.</p>
+        <div class="section-label" data-i18n="features_label">Features</div>
+        <h2 class="section-title" data-i18n="features_title">Everything you need, nothing you don't</h2>
+        <p class="section-desc" data-i18n="features_desc">Simple display management that lives in your menu bar and stays out of the way.</p>
         <div class="feature-grid">
             <div class="feature-card">
                 <div class="feature-icon">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M8 12l2 2 4-4"/></svg>
                 </div>
-                <h3>Enable / Disable Displays</h3>
-                <p>Toggle monitors on and off without unplugging them. Handles edge cases like disabling the main display safely.</p>
+                <h3 data-i18n="feat_toggle_title">Enable / Disable Displays</h3>
+                <p data-i18n="feat_toggle_desc">Toggle monitors on and off without unplugging them. Handles edge cases like disabling the main display safely.</p>
             </div>
             <div class="feature-card">
                 <div class="feature-icon">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>
                 </div>
-                <h3>Virtual Displays</h3>
-                <p>Create virtual monitors with custom resolutions and device presets &mdash; iPhone, iPad, Mac, TV, and more.</p>
+                <h3 data-i18n="feat_virtual_title">Virtual Displays</h3>
+                <p data-i18n="feat_virtual_desc">Create virtual monitors with custom resolutions and device presets &mdash; iPhone, iPad, Mac, TV, and more.</p>
             </div>
             <div class="feature-card">
                 <div class="feature-icon">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3h7v7H3zM14 3h7v7h-7zM3 14h7v7H3zM14 14h7v7h-7z"/></svg>
                 </div>
-                <h3>Set Main Display</h3>
-                <p>Change your primary monitor from the menu bar. Menu bar and dock reposition automatically.</p>
+                <h3 data-i18n="feat_main_title">Set Main Display</h3>
+                <p data-i18n="feat_main_desc">Change your primary monitor from the menu bar. Menu bar and dock reposition automatically.</p>
             </div>
             <div class="feature-card">
                 <div class="feature-icon" style="background:rgba(108,92,231,0.1);color:var(--purple);">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg>
                 </div>
-                <h3>HiDPI Support</h3>
-                <p>Create Retina virtual displays. HiDPI and standard modes properly grouped and labeled.</p>
+                <h3 data-i18n="feat_hidpi_title">HiDPI Support</h3>
+                <p data-i18n="feat_hidpi_desc">Create Retina virtual displays. HiDPI and standard modes properly grouped and labeled.</p>
             </div>
             <div class="feature-card">
                 <div class="feature-icon" style="background:rgba(0,184,148,0.1);color:var(--green);">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a10 10 0 100 20 10 10 0 000-20z"/><path d="M12 6v6l4 2"/></svg>
                 </div>
-                <h3>Sleep / Wake Safe</h3>
-                <p>Automatically handles display state across sleep cycles. Your setup is restored without manual intervention.</p>
+                <h3 data-i18n="feat_sleep_title">Sleep / Wake Safe</h3>
+                <p data-i18n="feat_sleep_desc">Automatically handles display state across sleep cycles. Your setup is restored without manual intervention.</p>
             </div>
             <div class="feature-card">
                 <div class="feature-icon" style="background:rgba(0,184,148,0.1);color:var(--green);">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
                 </div>
-                <h3>ColorSync Fix</h3>
-                <p>Prevents the ColorSync deadlock that occurs with identical monitors on macOS Sequoia.</p>
+                <h3 data-i18n="feat_color_title">ColorSync Fix</h3>
+                <p data-i18n="feat_color_desc">Prevents the ColorSync deadlock that occurs with identical monitors on macOS Sequoia.</p>
             </div>
         </div>
     </div>
@@ -334,25 +345,25 @@
     <div class="container">
         <div class="vd-grid">
             <div class="vd-content">
-                <div class="section-label" style="text-align:left;">Virtual Displays</div>
-                <h2>Real monitors, <span class="grad">created in software</span></h2>
-                <p>macOS limits resolution when no physical monitor is connected. SimpleDisplay creates virtual displays that the system treats as real screens &mdash; perfect for remote access, testing, and headless setups.</p>
+                <div class="section-label" style="text-align:left;" data-i18n="vd_label">Virtual Displays</div>
+                <h2><span data-i18n="vd_title_1">Real monitors, </span><span class="grad" data-i18n="vd_title_2">created in software</span></h2>
+                <p data-i18n="vd_desc">macOS limits resolution when no physical monitor is connected. SimpleDisplay creates virtual displays that the system treats as real screens &mdash; perfect for remote access, testing, and headless setups.</p>
                 <div class="vd-usecases">
                     <div class="vd-usecase">
-                        <h4>Remote access</h4>
-                        <p>Full resolution over VNC, Screen Sharing, Parsec, AnyDesk, or TeamViewer.</p>
+                        <h4 data-i18n="vd_remote_title">Remote access</h4>
+                        <p data-i18n="vd_remote_desc">Full resolution over VNC, Screen Sharing, Parsec, AnyDesk, or TeamViewer.</p>
                     </div>
                     <div class="vd-usecase">
-                        <h4>Headless Macs</h4>
-                        <p>Run Mac minis and Mac Studios with no monitor attached at any resolution.</p>
+                        <h4 data-i18n="vd_headless_title">Headless Macs</h4>
+                        <p data-i18n="vd_headless_desc">Run Mac minis and Mac Studios with no monitor attached at any resolution.</p>
                     </div>
                     <div class="vd-usecase">
-                        <h4>Responsive testing</h4>
-                        <p>Test layouts at specific device resolutions without extra hardware.</p>
+                        <h4 data-i18n="vd_responsive_title">Responsive testing</h4>
+                        <p data-i18n="vd_responsive_desc">Test layouts at specific device resolutions without extra hardware.</p>
                     </div>
                     <div class="vd-usecase">
-                        <h4>Hidden screens</h4>
-                        <p>Keep apps running on a virtual display while working on your main screen.</p>
+                        <h4 data-i18n="vd_hidden_title">Hidden screens</h4>
+                        <p data-i18n="vd_hidden_desc">Keep apps running on a virtual display while working on your main screen.</p>
                     </div>
                 </div>
                 <div class="preset-grid">
@@ -390,20 +401,20 @@
     <div class="container">
         <div class="how-grid">
             <div class="how-content">
-                <div class="section-label" style="text-align:left;">How it works</div>
-                <h2>Built on Apple's <span class="grad">display APIs</span></h2>
-                <p>SimpleDisplay uses macOS private frameworks to give you control that the built-in settings don't offer.</p>
+                <div class="section-label" style="text-align:left;" data-i18n="how_label">How it works</div>
+                <h2><span data-i18n="how_title_1">Built on Apple's </span><span class="grad" data-i18n="how_title_2">display APIs</span></h2>
+                <p data-i18n="how_desc">SimpleDisplay uses macOS private frameworks to give you control that the built-in settings don't offer.</p>
                 <div class="how-detail">
-                    <h4>Virtual monitors</h4>
-                    <p>Uses Apple's private <code style="color:var(--blue);background:rgba(30,144,255,0.1);padding:2px 6px;border-radius:4px;font-size:12px;">CGVirtualDisplay</code> API to create displays that appear as real monitors to macOS &mdash; useful for screen sharing specific resolutions, testing responsive layouts, or keeping apps running on a "hidden" screen.</p>
+                    <h4 data-i18n="how_virtual_title">Virtual monitors</h4>
+                    <p data-i18n-html="how_virtual_desc">Uses Apple's private <code style="color:var(--blue);background:rgba(30,144,255,0.1);padding:2px 6px;border-radius:4px;font-size:12px;">CGVirtualDisplay</code> API to create displays that appear as real monitors to macOS &mdash; useful for screen sharing specific resolutions, testing responsive layouts, or keeping apps running on a "hidden" screen.</p>
                 </div>
                 <div class="how-detail">
-                    <h4>Disabling a display</h4>
-                    <p>Mirrors it to another active display via <code style="color:var(--blue);background:rgba(30,144,255,0.1);padding:2px 6px;border-radius:4px;font-size:12px;">CGConfigureDisplayMirrorOfDisplay</code>, effectively turning it off. This is reversed by removing the mirror relationship.</p>
+                    <h4 data-i18n="how_disable_title">Disabling a display</h4>
+                    <p data-i18n-html="how_disable_desc">Mirrors it to another active display via <code style="color:var(--blue);background:rgba(30,144,255,0.1);padding:2px 6px;border-radius:4px;font-size:12px;">CGConfigureDisplayMirrorOfDisplay</code>, effectively turning it off. This is reversed by removing the mirror relationship.</p>
                 </div>
                 <div class="how-detail">
-                    <h4>Why private APIs?</h4>
-                    <p>These capabilities aren't available through public frameworks. SimpleDisplay can't be distributed on the Mac App Store, but it can do things no App Store app can.</p>
+                    <h4 data-i18n="how_why_title">Why private APIs?</h4>
+                    <p data-i18n="how_why_desc">These capabilities aren't available through public frameworks. SimpleDisplay can't be distributed on the Mac App Store, but it can do things no App Store app can.</p>
                 </div>
             </div>
             <div>
@@ -430,24 +441,28 @@
 
 <section class="get-started" id="get-started">
     <div class="container">
-        <div class="section-label">Get started</div>
-        <h2 class="section-title">Up and running in seconds</h2>
-        <p class="section-desc">Download the DMG or build from source &mdash; your choice.</p>
+        <div class="section-label" data-i18n="start_label">Get started</div>
+        <h2 class="section-title" data-i18n="start_title">Up and running in seconds</h2>
+        <p class="section-desc" data-i18n="start_desc">Download the DMG or build from source &mdash; your choice.</p>
         <div class="get-started-grid">
             <div class="start-card primary">
-                <div class="tag"><span class="dot"></span> Recommended</div>
-                <h3>Download</h3>
-                <p>Grab the latest DMG from GitHub Releases. Open it, drag to Applications, and you're done.<br><br>
-                <strong style="color:var(--text);font-size:13px;">First launch:</strong> <span style="font-size:13px;">Right-click the app &rarr; Open (required for unsigned apps).</span></p>
+                <div class="tag"><span class="dot"></span> <span data-i18n="start_recommended">Recommended</span></div>
+                <h3 data-i18n="start_download_title">Download</h3>
+                <p data-i18n="start_download_desc">Grab the latest DMG from GitHub Releases. Open it, drag to Applications, and you're done.</p>
+                <div style="background:#0D0D14;border:1px solid var(--border);border-radius:12px;padding:20px;margin-bottom:20px;">
+                    <p style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:8px;" data-i18n="start_first_launch">First launch</p>
+                    <p style="font-size:12px;color:var(--muted);margin-bottom:12px;line-height:1.6;" data-i18n-html="start_first_launch_desc">macOS will block the app since it isn't notarized. Go to <strong style="color:var(--text);">System Settings &rarr; Privacy &amp; Security</strong> and click <strong style="color:var(--text);">Open Anyway</strong>. This only needs to be done once.</p>
+                    <img src="assets/gatekeeper.png" alt="macOS Gatekeeper — click Open Anyway" style="width:100%;border-radius:8px;border:1px solid var(--border);">
+                </div>
                 <a href="https://github.com/SamuelRioTz/SimpleDisplay/releases/latest/download/SimpleDisplay.dmg" class="btn btn-primary" style="justify-content:center;">
                     <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
-                    Download latest release
+                    <span data-i18n="start_download_btn">Download latest release</span>
                 </a>
             </div>
             <div class="start-card">
-                <div class="tag" style="color:var(--purple);"><span class="dot" style="background:var(--purple);"></span> For developers</div>
-                <h3>Build from source</h3>
-                <p>Clone the repo and build with a single command. Requires Xcode Command Line Tools.</p>
+                <div class="tag" style="color:var(--purple);"><span class="dot" style="background:var(--purple);"></span> <span data-i18n="start_dev">For developers</span></div>
+                <h3 data-i18n="start_build_title">Build from source</h3>
+                <p data-i18n="start_build_desc">Clone the repo and build with a single command. Requires Xcode Command Line Tools.</p>
                 <div class="code-block">
                     <span class="comment"># clone &amp; build</span><br>
                     <span class="cmd">git clone https://github.com/SamuelRioTz/SimpleDisplay.git</span><br>
@@ -458,7 +473,7 @@
                 </div>
                 <a href="https://github.com/SamuelRioTz/SimpleDisplay" class="btn btn-outline" style="justify-content:center;">
                     <svg class="icon" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg>
-                    View on GitHub
+                    <span data-i18n="start_github_btn">View on GitHub</span>
                 </a>
             </div>
         </div>
@@ -467,25 +482,25 @@
 
 <section class="limitations">
     <div class="container">
-        <div class="section-label">Good to know</div>
-        <h2 class="section-title">Known limitations</h2>
-        <p class="section-desc">SimpleDisplay uses private Apple APIs. Here's what that means in practice.</p>
+        <div class="section-label" data-i18n="lim_label">Good to know</div>
+        <h2 class="section-title" data-i18n="lim_title">Known limitations</h2>
+        <p class="section-desc" data-i18n="lim_desc">SimpleDisplay uses private Apple APIs. Here's what that means in practice.</p>
         <div class="limitations-grid">
             <div class="limitation-item">
                 <svg class="lim-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></svg>
-                <p>Cannot be distributed on the Mac App Store &mdash; private APIs are not allowed by Apple's review guidelines.</p>
+                <p data-i18n-html="lim_1">Cannot be distributed on the Mac App Store &mdash; private APIs are not allowed by Apple's review guidelines.</p>
             </div>
             <div class="limitation-item">
                 <svg class="lim-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></svg>
-                <p>Virtual display refresh rate is capped at 60 Hz (API limitation).</p>
+                <p data-i18n="lim_2">Virtual display refresh rate is capped at 60 Hz (API limitation).</p>
             </div>
             <div class="limitation-item">
                 <svg class="lim-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></svg>
-                <p>Display identification uses names, so two identical monitors may not be distinguishable in all scenarios.</p>
+                <p data-i18n="lim_3">Display identification uses names, so two identical monitors may not be distinguishable in all scenarios.</p>
             </div>
             <div class="limitation-item">
                 <svg class="lim-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></svg>
-                <p>The <code style="font-size:12px;">CGVirtualDisplay</code> API may change or be removed in future macOS versions.</p>
+                <p data-i18n-html="lim_4">The <code style="font-size:12px;">CGVirtualDisplay</code> API may change or be removed in future macOS versions.</p>
             </div>
         </div>
     </div>
@@ -498,20 +513,20 @@
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
                 GPL-3.0
             </div>
-            <h2>Built in the open</h2>
-            <p>SimpleDisplay is free software. Built with insights from the macOS display management community, including <a href="https://github.com/waydabber/BetterDisplay" style="color:var(--blue);text-decoration:none;">BetterDisplay</a>, <a href="https://github.com/Stengo/DeskPad" style="color:var(--blue);text-decoration:none;">DeskPad</a>, and <a href="https://github.com/jakehilborn/displayplacer" style="color:var(--blue);text-decoration:none;">displayplacer</a>. Contributions of all kinds are welcome.</p>
+            <h2 data-i18n="community_title">Built in the open</h2>
+            <p data-i18n-html="community_desc">SimpleDisplay is free software. Built with insights from the macOS display management community, including <a href="https://github.com/waydabber/BetterDisplay" style="color:var(--blue);text-decoration:none;">BetterDisplay</a>, <a href="https://github.com/Stengo/DeskPad" style="color:var(--blue);text-decoration:none;">DeskPad</a>, and <a href="https://github.com/jakehilborn/displayplacer" style="color:var(--blue);text-decoration:none;">displayplacer</a>. Contributions of all kinds are welcome.</p>
             <div class="community-links">
                 <a href="https://github.com/SamuelRioTz/SimpleDisplay" class="btn btn-outline">
                     <svg class="icon" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg>
-                    Source code
+                    <span data-i18n="community_source">Source code</span>
                 </a>
                 <a href="https://github.com/SamuelRioTz/SimpleDisplay/issues" class="btn btn-outline">
                     <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></svg>
-                    Report an issue
+                    <span data-i18n="community_issues">Report an issue</span>
                 </a>
                 <a href="https://github.com/SamuelRioTz/SimpleDisplay/blob/main/CONTRIBUTING.md" class="btn btn-outline">
                     <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="8.5" cy="7" r="4"/><path d="M20 8v6M23 11h-6"/></svg>
-                    Contribute
+                    <span data-i18n="community_contribute">Contribute</span>
                 </a>
             </div>
         </div>
@@ -520,9 +535,10 @@
 
 <footer>
     <div class="container">
-        <p>&copy; 2024&ndash;2026 SimpleDisplay &middot; Licensed under <a href="https://github.com/SamuelRioTz/SimpleDisplay/blob/main/LICENSE">GPL-3.0</a> &middot; Made for macOS</p>
+        <p data-i18n-html="footer">&copy; 2024&ndash;2026 SimpleDisplay &middot; Licensed under <a href="https://github.com/SamuelRioTz/SimpleDisplay/blob/main/LICENSE">GPL-3.0</a> &middot; Made for macOS</p>
     </div>
 </footer>
 
+<script src="js/i18n.js"></script>
 </body>
 </html>

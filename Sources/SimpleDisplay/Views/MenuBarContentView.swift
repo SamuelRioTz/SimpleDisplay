@@ -2,6 +2,7 @@ import SwiftUI
 
 struct MenuBarContentView: View {
     @Environment(DisplayManagerViewModel.self) private var viewModel
+    @Environment(LocaleManager.self) private var locale
 
     private var configuringDisplay: DisplayInfo? {
         guard case .configuringDisplay(let id) = viewModel.navigationState else { return nil }
@@ -27,7 +28,7 @@ struct MenuBarContentView: View {
                 .buttonStyle(.borderless)
                 .disabled(viewModel.isNavigating)
 
-                Text("SimpleDisplay")
+                Text(verbatim: locale.t("app_name"))
                     .font(.headline)
                 Spacer()
                 if viewModel.isBusy {
@@ -102,15 +103,18 @@ struct MenuBarContentView: View {
             case .settings:
                 SettingsView()
                     .environment(viewModel)
+                    .environment(locale)
 
             case .addVirtualDisplay:
                 VirtualDisplayEditorView(editing: nil)
                     .environment(viewModel)
+                    .environment(locale)
 
             case .configuringDisplay:
                 if let display = configuringDisplay, display.isVirtual {
                     VirtualDisplayEditorView(editing: display)
                         .environment(viewModel)
+                        .environment(locale)
                 } else {
                     displayListContent
                 }
@@ -135,7 +139,7 @@ struct MenuBarContentView: View {
                 Image(systemName: "display.trianglebadge.exclamationmark")
                     .font(.largeTitle)
                     .foregroundStyle(.secondary)
-                Text("No displays found")
+                Text(locale.t("no_displays"))
                     .font(.callout)
                     .foregroundStyle(.secondary)
             }
@@ -174,7 +178,7 @@ struct MenuBarContentView: View {
             Button {
                 viewModel.navigate(to: .addVirtualDisplay)
             } label: {
-                Label("Virtual Display", systemImage: "plus.rectangle.on.rectangle")
+                Label(locale.t("virtual_display"), systemImage: "plus.rectangle.on.rectangle")
                     .font(.callout)
             }
             .buttonStyle(.borderless)
@@ -182,7 +186,7 @@ struct MenuBarContentView: View {
 
             Spacer()
 
-            Button("Quit") {
+            Button(locale.t("quit")) {
                 NSApplication.shared.terminate(nil)
             }
             .buttonStyle(.borderless)

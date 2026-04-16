@@ -3,6 +3,7 @@ import PackageDescription
 
 let package = Package(
     name: "SimpleDisplay",
+    defaultLocalization: "en",
     platforms: [.macOS(.v14)],
     targets: [
         .target(
@@ -18,6 +19,9 @@ let package = Package(
             name: "SimpleDisplay",
             dependencies: ["VirtualDisplayBridge"],
             path: "Sources/SimpleDisplay",
+            resources: [
+                .process("Resources")
+            ],
             linkerSettings: [
                 .linkedFramework("AppKit"),
                 .linkedFramework("CoreGraphics"),

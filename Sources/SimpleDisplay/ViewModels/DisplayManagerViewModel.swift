@@ -35,6 +35,9 @@ final class DisplayManagerViewModel {
     var isNavigating: Bool = false
     var newDisplayConfig = VirtualDisplayService.VirtualDisplayConfig()
 
+    /// Reference to locale manager for localized messages
+    var locale: LocaleManager?
+
     private let displayService = DisplayService()
     private let virtualService = VirtualDisplayService()
     private var changeToken: DisplayChangeToken?
@@ -60,6 +63,14 @@ final class DisplayManagerViewModel {
         displayService.fixDuplicateDisplayProfiles(displays: displays)
         registerForDisplayChanges()
         registerForSleepWake()
+    }
+
+    private func t(_ key: String) -> String {
+        locale?.t(key) ?? key
+    }
+
+    private func t(_ key: String, _ args: any CVarArg...) -> String {
+        locale?.t(key, args) ?? key
     }
 
     // MARK: - Navigation
@@ -114,7 +125,7 @@ final class DisplayManagerViewModel {
     func setAsMainDisplay(_ display: DisplayInfo) {
         guard display.isActive, !display.isMain, !isBusy else { return }
         isBusy = true
-        busyMessage = "Setting main display..."
+        busyMessage = t("setting_main")
         Task {
             defer { isBusy = false; busyMessage = nil }
             do {
@@ -137,7 +148,9 @@ final class DisplayManagerViewModel {
     func toggleDisplay(_ display: DisplayInfo) {
         guard !isBusy else { return }
         isBusy = true
-        busyMessage = display.isMirrored ? "Enabling \(display.name)..." : "Disabling \(display.name)..."
+        busyMessage = display.isMirrored
+            ? t("enabling_format", display.name)
+            : t("disabling_format", display.name)
         Task {
             defer { isBusy = false; busyMessage = nil }
 
@@ -162,13 +175,13 @@ final class DisplayManagerViewModel {
                 if active.isEmpty {
                     let fallback = displays.first(where: { $0.isBuiltIn }) ?? displays.first
                     if let target = fallback {
-                        busyMessage = "Re-enabling \(target.name)..."
+                        busyMessage = t("re_enabling_format", target.name)
                         do {
                             try displayService.enableDisplay(target.id)
                             try? await Task.sleep(for: .milliseconds(500))
                             refresh()
                         } catch {
-                            errorMessage = "All displays disabled. Failed to re-enable: \(error.localizedDescription)"
+                            errorMessage = t("all_disabled_error", error.localizedDescription)
                         }
                     }
                 }
@@ -181,7 +194,7 @@ final class DisplayManagerViewModel {
     func createVirtualDisplay() {
         guard !isBusy else { return }
         isBusy = true
-        busyMessage = "Creating virtual display..."
+        busyMessage = t("creating_virtual")
         Task {
             defer { isBusy = false; busyMessage = nil }
             do {
@@ -211,7 +224,7 @@ final class DisplayManagerViewModel {
     func reconfigureVirtualDisplay(_ display: DisplayInfo, width: Int, height: Int, refreshRate: Double = 60, hiDPI: Bool = false, name: String? = nil) {
         guard !isBusy else { return }
         isBusy = true
-        busyMessage = "Reconfiguring display..."
+        busyMessage = t("reconfiguring")
         Task {
             defer { isBusy = false; busyMessage = nil }
             let displayName = name ?? display.name

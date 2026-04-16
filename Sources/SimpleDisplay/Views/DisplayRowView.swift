@@ -2,6 +2,7 @@ import SwiftUI
 
 struct DisplayRowView: View {
     @Environment(DisplayManagerViewModel.self) private var viewModel
+    @Environment(LocaleManager.self) private var locale
     let display: DisplayInfo
 
     private var isConfiguring: Bool {
@@ -35,12 +36,12 @@ struct DisplayRowView: View {
             VStack(alignment: .leading, spacing: 2) {
                 HStack(spacing: 6) {
                     if display.isMain {
-                        BadgeView(text: "Main", color: .blue)
+                        BadgeView(text: locale.t("badge_main"), color: .blue)
                     } else if display.isActive && !display.isVirtual {
                         Button {
                             viewModel.setAsMainDisplay(display)
                         } label: {
-                            BadgeView(text: "Set Main", color: .secondary)
+                            BadgeView(text: locale.t("badge_set_main"), color: .secondary)
                         }
                         .buttonStyle(.borderless)
                         .disabled(viewModel.isBusy)
@@ -50,13 +51,13 @@ struct DisplayRowView: View {
                         .fontWeight(.medium)
                         .foregroundStyle(display.isActive ? .primary : .secondary)
                     if display.isVirtual {
-                        BadgeView(text: "Virtual", color: .purple)
+                        BadgeView(text: locale.t("badge_virtual"), color: .purple)
                     }
                     if display.isMirrored {
-                        BadgeView(text: "Disabled", color: .orange)
+                        BadgeView(text: locale.t("badge_disabled"), color: .orange)
                     }
                 }
-                Text(verbatim: display.currentMode.resolutionString)
+                Text(verbatim: display.currentMode.localizedResolutionString(locale))
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
