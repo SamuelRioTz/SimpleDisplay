@@ -13,6 +13,8 @@
   "clean_subtitle": "Elimina perfiles de pantalla en caché. Soluciona problemas de color.",
   "no_cached_profiles": "No se encontraron perfiles en caché.",
   "cleaned_format": "%d perfiles limpiados. Se recomienda reiniciar.",
+  "cleaned_device_cache": "Caché de dispositivos limpiado. Se recomienda reiniciar.",
+  "include_physical": "Incluir pantallas físicas",
   "failed_login_item": "Error al actualizar ítem de inicio: %@",
   "website": "Sitio web",
   "contact": "Contacto",

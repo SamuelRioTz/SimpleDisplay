@@ -9,6 +9,7 @@ struct SettingsView: View {
     @State private var cleanupResult: String?
     @State private var showCleanConfirmation: Bool = false
     @State private var ghostCount: Int = 0
+    @State private var includePhysicalDisplays: Bool = false
     /// Prevents onChange from firing during initial onAppear value loading
     @State private var didLoadInitialValues: Bool = false
 
@@ -101,6 +102,15 @@ struct SettingsView: View {
                             Text(locale.t("clean_description"))
                                 .font(.caption2)
                                 .foregroundStyle(.secondary)
+                            Toggle(isOn: $includePhysicalDisplays) {
+                                Text(locale.t("include_physical"))
+                                    .font(.caption2)
+                            }
+                            .toggleStyle(.checkbox)
+                            .controlSize(.small)
+                            .onChange(of: includePhysicalDisplays) { _, newValue in
+                                ghostCount = countGhostProfiles(includePhysical: newValue)
+                            }
                             HStack {
                                 Spacer()
                                 Button(locale.t("cancel")) {
@@ -108,8 +118,9 @@ struct SettingsView: View {
                                 }
                                 .font(.caption)
                                 Button(role: .destructive) {
-                                    cleanSystemCache()
+                                    cleanSystemCache(includePhysical: includePhysicalDisplays)
                                     showCleanConfirmation = false
+                                    includePhysicalDisplays = false
                                 } label: {
                                     Text(locale.t("clean")).font(.caption).fontWeight(.medium)
                                 }
@@ -125,7 +136,7 @@ struct SettingsView: View {
                     } else {
                         settingsRow {
                             Button {
-                                ghostCount = countGhostProfiles()
+                                ghostCount = countGhostProfiles(includePhysical: false)
                                 withAnimation { showCleanConfirmation = true }
                             } label: {
                                 HStack(spacing: 10) {
@@ -245,24 +256,44 @@ struct SettingsView: View {
         }
     }
 
-    private func cleanSystemCache() {
-        let profilesDir = "/Library/ColorSync/Profiles/Displays"
-
-        let allowedChars = CharacterSet.alphanumerics.union(.whitespaces).union(CharacterSet(charactersIn: ".-_()\""))
-        var filesToRemove: [String] = []
-        if let files = try? FileManager.default.contentsOfDirectory(atPath: profilesDir) {
-            for file in files where file.hasSuffix(".icc") {
-                if file.unicodeScalars.allSatisfy({ allowedChars.contains($0) }) {
-                    filesToRemove.append(file)
-                }
+    /// Returns UUIDs of currently online physical displays (not virtual).
+    private func physicalDisplayUUIDs() -> Set<String> {
+        var ids = [CGDirectDisplayID](repeating: 0, count: 16)
+        var count: UInt32 = 0
+        CGGetOnlineDisplayList(UInt32(ids.count), &ids, &count)
+        let virtualIDs = viewModel.virtualDisplayIDs
+        var uuids: Set<String> = []
+        for i in 0..<Int(count) {
+            guard !virtualIDs.contains(ids[i]) else { continue }
+            if let cfUUID = CGDisplayCreateUUIDFromDisplayID(ids[i])?.takeRetainedValue() {
+                let str = CFUUIDCreateString(nil, cfUUID) as String? ?? ""
+                if !str.isEmpty { uuids.insert(str) }
             }
         }
+        return uuids
+    }
 
-        guard !filesToRemove.isEmpty else {
-            cleanupResult = locale.t("no_cached_profiles")
-            return
+    /// Filters ICC profile filenames, optionally excluding physical display profiles.
+    private func profileFilesToClean(includePhysical: Bool) -> [String] {
+        let profilesDir = "/Library/ColorSync/Profiles/Displays"
+        let allowedChars = CharacterSet.alphanumerics.union(.whitespaces).union(CharacterSet(charactersIn: ".-_()\""))
+        let physicalUUIDs = includePhysical ? Set<String>() : physicalDisplayUUIDs()
+
+        var files: [String] = []
+        guard let entries = try? FileManager.default.contentsOfDirectory(atPath: profilesDir) else { return [] }
+        for file in entries where file.hasSuffix(".icc") {
+            guard file.unicodeScalars.allSatisfy({ allowedChars.contains($0) }) else { continue }
+            if !includePhysical && physicalUUIDs.contains(where: { file.contains($0) }) { continue }
+            files.append(file)
         }
+        return files
+    }
 
+    private func cleanSystemCache(includePhysical: Bool) {
+        let profilesDir = "/Library/ColorSync/Profiles/Displays"
+        let filesToRemove = profileFilesToClean(includePhysical: includePhysical)
+
+        // Always clean the device cache even if no ICC files to remove
         let rmCommands = filesToRemove.map { file in
             let path = "\(profilesDir)/\(file)"
             let escaped = path.replacingOccurrences(of: "'", with: "'\\''")
@@ -294,17 +325,18 @@ struct SettingsView: View {
                     cleanupResult = "Error: \(msg)"
                 }
             } else {
-                cleanupResult = locale.t("cleaned_format", filesToRemove.count)
+                let totalCleaned = filesToRemove.count
+                cleanupResult = totalCleaned > 0
+                    ? locale.t("cleaned_format", totalCleaned)
+                    : locale.t("cleaned_device_cache")
                 // Re-apply sRGB profiles so restarted daemons don't loop again
                 viewModel.fixColorProfiles()
             }
         }
     }
 
-    private func countGhostProfiles() -> Int {
-        let profilesDir = "/Library/ColorSync/Profiles/Displays"
-        guard let files = try? FileManager.default.contentsOfDirectory(atPath: profilesDir) else { return 0 }
-        return files.filter { $0.hasSuffix(".icc") }.count
+    private func countGhostProfiles(includePhysical: Bool) -> Int {
+        profileFilesToClean(includePhysical: includePhysical).count
     }
 
     private func setLaunchAtLogin(_ enabled: Bool) {

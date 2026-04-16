@@ -13,6 +13,8 @@
   "clean_subtitle": "Zwischengespeicherte Anzeigeprofile entfernen. Behebt Farbprobleme.",
   "no_cached_profiles": "Keine zwischengespeicherten Profile gefunden.",
   "cleaned_format": "%d Profile bereinigt. Neustart empfohlen.",
+  "cleaned_device_cache": "Geräte-Cache bereinigt. Neustart empfohlen.",
+  "include_physical": "Physische Bildschirme einbeziehen",
   "failed_login_item": "Anmeldeobjekt konnte nicht aktualisiert werden: %@",
   "website": "Webseite",
   "contact": "Kontakt",

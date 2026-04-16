@@ -13,6 +13,8 @@
   "clean_subtitle": "Remove all cached display profiles. Fixes color issues.",
   "no_cached_profiles": "No cached profiles found.",
   "cleaned_format": "Cleaned %d profiles. Restart recommended.",
+  "cleaned_device_cache": "Device cache cleaned. Restart recommended.",
+  "include_physical": "Include physical displays",
   "failed_login_item": "Failed to update login item: %@",
   "website": "Website",
   "contact": "Contact",
