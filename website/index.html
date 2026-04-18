@@ -213,17 +213,68 @@
         .icon { width: 18px; height: 18px; flex-shrink: 0; }
 
         @media (max-width: 768px) {
-            .hero h1 { font-size: 36px; }
-            .hero p { font-size: 17px; }
+            .container { padding: 0 16px; }
+
+            /* Nav: hide in-page anchors, keep brand + GitHub + lang switcher */
+            nav { padding: 14px 0; }
+            .nav-links { gap: 10px; }
+            .nav-links > a[href^="#"] { display: none; }
+            .nav-brand span { font-size: 16px; }
+            .btn { padding: 8px 14px; font-size: 13px; }
+            .lang-switcher { gap: 2px; margin-left: 4px; }
+            .lang-btn { padding: 4px 8px; font-size: 11px; }
+
+            /* Hero */
+            .hero { padding: 56px 0 48px; }
+            .hero h1 { font-size: 36px; letter-spacing: -1px; }
+            .hero p { font-size: 17px; margin-bottom: 28px; }
+            .hero-cta { gap: 10px; }
+            .hero-cta .btn { width: 100%; justify-content: center; }
+
+            /* Section rhythm */
+            .stats { padding: 0 0 48px; }
+            .features, .vd, .how, .get-started { padding: 56px 0; }
+            .limitations { padding: 48px 0; }
+            .community { padding: 56px 0; }
+            .section-title { font-size: 26px; }
+            .section-desc { font-size: 15px; margin-bottom: 32px; }
+
+            /* Grids collapse */
             .feature-grid { grid-template-columns: 1fr; }
-            .vd-grid { grid-template-columns: 1fr; }
+            .vd-grid { grid-template-columns: 1fr; gap: 40px; }
             .vd-usecases { grid-template-columns: 1fr; }
-            .how-grid { grid-template-columns: 1fr; }
+            .how-grid { grid-template-columns: 1fr; gap: 40px; }
             .get-started-grid { grid-template-columns: 1fr; }
             .limitations-grid { grid-template-columns: 1fr; }
-            .stats-grid { gap: 32px; }
+
+            /* Stats */
+            .stats-grid { flex-wrap: wrap; gap: 24px 32px; }
             .stat-value { font-size: 22px; }
-            .lang-switcher { gap: 2px; }
+
+            /* Side-by-side headings */
+            .vd-content h2, .how-content h2 { font-size: 24px; }
+
+            /* Cards: tighter padding */
+            .feature-card { padding: 22px; }
+            .start-card { padding: 24px; border-radius: 16px; }
+            .community-card { padding: 28px 20px; border-radius: 16px; }
+            .community-card h2 { font-size: 22px; }
+
+            /* Terminal blocks: allow horizontal scroll, smaller text */
+            .terminal { padding: 20px; border-radius: 12px; }
+            .terminal-body { font-size: 11px; line-height: 1.8; padding: 16px; overflow-x: auto; white-space: nowrap; }
+            .code-block { font-size: 12px; overflow-x: auto; }
+        }
+
+        @media (max-width: 380px) {
+            .hero h1 { font-size: 30px; }
+            .hero p { font-size: 15px; }
+            .section-title { font-size: 22px; }
+            .nav-links { gap: 6px; }
+            .btn { padding: 7px 10px; font-size: 12px; }
+            .lang-btn { padding: 3px 6px; }
+            .nav-github-label { display: none; }
+            .nav-github { padding: 7px 9px; }
         }
     </style>
 </head>
@@ -239,9 +290,9 @@
             <a href="#features" data-i18n="nav_features">Features</a>
             <a href="#how-it-works" data-i18n="nav_how">How it works</a>
             <a href="#get-started" data-i18n="nav_start">Get started</a>
-            <a href="https://github.com/SamuelRioTz/SimpleDisplay" class="btn btn-ghost">
+            <a href="https://github.com/SamuelRioTz/SimpleDisplay" class="btn btn-ghost nav-github">
                 <svg class="icon" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg>
-                GitHub
+                <span class="nav-github-label">GitHub</span>
             </a>
             <div class="lang-switcher">
                 <button class="lang-btn active" data-lang="en" onclick="switchLanguage('en')">EN</button>
@@ -535,7 +586,7 @@
 
 <footer>
     <div class="container">
-        <p data-i18n-html="footer">&copy; 2024&ndash;2026 SimpleDisplay &middot; Licensed under <a href="https://github.com/SamuelRioTz/SimpleDisplay/blob/main/LICENSE">GPL-3.0</a> &middot; Made for macOS</p>
+        <p data-i18n-html="footer">&copy; 2026 SimpleDisplay &middot; Licensed under <a href="https://github.com/SamuelRioTz/SimpleDisplay/blob/main/LICENSE">GPL-3.0</a> &middot; Made for macOS</p>
     </div>
 </footer>
 
