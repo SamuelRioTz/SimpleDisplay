@@ -1,8 +1,11 @@
 APP_NAME = SimpleDisplay
+CLI_NAME = simpledisplayctl
+CLI_INSTALL_DIR ?= /usr/local/bin
 BUILD_DIR = .build/apple/Products/Release
 OUT_DIR = .build
 APP_BUNDLE = $(OUT_DIR)/$(APP_NAME).app
 BINARY = $(BUILD_DIR)/$(APP_NAME)
+CLI_BINARY = $(BUILD_DIR)/$(CLI_NAME)
 CONTENTS = $(APP_BUNDLE)/Contents
 MACOS_DIR = $(CONTENTS)/MacOS
 RESOURCES_DIR = $(CONTENTS)/Resources
@@ -10,8 +13,15 @@ INFO_PLIST = Info.plist
 DMG_NAME = $(OUT_DIR)/$(APP_NAME).dmg
 DMG_STAGING = $(OUT_DIR)/dmg-staging
 VERSION ?= $(shell git describe --tags --abbrev=0 2>/dev/null | sed 's/^v//' || echo "1.0.0")
+CLI_VERSION_FILE = Sources/simpledisplayctl/Version.swift
 
-.PHONY: all build bundle run clean debug sign dmg
+# The CLI version file is committed with "dev" so plain `swift build` works.
+# Release builds stamp $(VERSION) before compiling and restore "dev" after,
+# so the git tag is the single source of truth for shipped binaries.
+STAMP_VERSION = printf 'enum CLIVersion {\n    static let string = "$(VERSION)"\n}\n' > $(CLI_VERSION_FILE)
+STAMP_DEV = printf 'enum CLIVersion {\n    // Overwritten by Make with $$(VERSION) during release builds, then restored.\n    static let string = "dev"\n}\n' > $(CLI_VERSION_FILE)
+
+.PHONY: all build bundle run clean debug sign dmg cli cli-install test
 
 all: bundle
 
@@ -27,7 +37,22 @@ debug:
 	@echo "Built $(OUT_DIR)/$(APP_NAME)-debug.app ($(VERSION))"
 
 build:
-	swift build -c release --arch arm64 --arch x86_64
+	@$(STAMP_VERSION)
+	@swift build -c release --arch arm64 --arch x86_64; RC=$$?; $(STAMP_DEV); exit $$RC
+
+test:
+	swift test
+
+cli:
+	@$(STAMP_VERSION)
+	@swift build -c release --arch arm64 --arch x86_64 --product $(CLI_NAME); RC=$$?; $(STAMP_DEV); exit $$RC
+	@echo "Built $(CLI_BINARY) ($(VERSION))"
+
+cli-install: cli
+	@mkdir -p $(CLI_INSTALL_DIR)
+	@cp $(CLI_BINARY) $(CLI_INSTALL_DIR)/$(CLI_NAME)
+	@chmod 0755 $(CLI_INSTALL_DIR)/$(CLI_NAME)
+	@echo "Installed $(CLI_INSTALL_DIR)/$(CLI_NAME)"
 
 bundle: build
 	@rm -rf $(APP_BUNDLE)

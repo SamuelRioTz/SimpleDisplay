@@ -48,5 +48,7 @@
   "error_mode_not_found": "The requested display mode was not found.",
   "error_config": "Display configuration failed: %@",
   "error_virtual": "Virtual display unavailable: %@",
-  "preset_tv": "TV & Others"
+  "preset_tv": "TV & Others",
+  "unknown_virtual_display_id": "No virtual display with ID %@",
+  "unknown_virtual_display_name": "No virtual display named \"%@\""
 }

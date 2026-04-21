@@ -48,5 +48,7 @@
   "error_mode_not_found": "El modo de pantalla solicitado no fue encontrado.",
   "error_config": "Error de configuración de pantalla: %@",
   "error_virtual": "Pantalla virtual no disponible: %@",
-  "preset_tv": "TV y otros"
+  "preset_tv": "TV y otros",
+  "unknown_virtual_display_id": "No existe pantalla virtual con ID %@",
+  "unknown_virtual_display_name": "No existe pantalla virtual llamada \"%@\""
 }

@@ -15,9 +15,13 @@ let package = Package(
                 .linkedFramework("Foundation"),
             ]
         ),
+        .target(
+            name: "SimpleDisplayCore",
+            path: "Sources/SimpleDisplayCore"
+        ),
         .executableTarget(
             name: "SimpleDisplay",
-            dependencies: ["VirtualDisplayBridge"],
+            dependencies: ["VirtualDisplayBridge", "SimpleDisplayCore"],
             path: "Sources/SimpleDisplay",
             resources: [
                 .process("Resources")
@@ -26,6 +30,16 @@ let package = Package(
                 .linkedFramework("AppKit"),
                 .linkedFramework("CoreGraphics"),
             ]
-        )
+        ),
+        .executableTarget(
+            name: "simpledisplayctl",
+            dependencies: ["SimpleDisplayCore"],
+            path: "Sources/simpledisplayctl"
+        ),
+        .testTarget(
+            name: "SimpleDisplayCoreTests",
+            dependencies: ["SimpleDisplayCore"],
+            path: "Tests/SimpleDisplayCoreTests"
+        ),
     ]
 )

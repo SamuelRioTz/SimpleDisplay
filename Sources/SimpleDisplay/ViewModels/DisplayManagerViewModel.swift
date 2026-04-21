@@ -3,6 +3,7 @@ import CoreGraphics
 import Foundation
 import Observation
 import os
+import SimpleDisplayCore
 
 private let logger = Logger(subsystem: "app.simpledisplay", category: "ViewModel")
 
@@ -249,6 +250,63 @@ final class DisplayManagerViewModel {
             navigationState = .displayList
             try? await Task.sleep(for: .milliseconds(500))
             refresh()
+        }
+    }
+
+    // MARK: - URL Scheme
+
+    /// Dispatches a parsed `simpledisplay://` command to the appropriate
+    /// existing public method. Side-effects (toast, refresh, nav) are
+    /// intentionally identical to what happens when the user clicks the
+    /// equivalent button — this is just another entry point, not a shadow
+    /// execution path.
+    func execute(urlCommand command: URLCommand) {
+        switch command {
+        case .open:
+            navigate(to: .displayList)
+            NSApp.activate(ignoringOtherApps: true)
+
+        case .create(let request):
+            newDisplayConfig = VirtualDisplayService.VirtualDisplayConfig(
+                name: request.name,
+                width: request.width,
+                height: request.height,
+                refreshRate: request.refreshRate,
+                hiDPI: request.hiDPI
+            )
+            createVirtualDisplay()
+
+        case .remove(.id(let rawID)):
+            let id = CGDirectDisplayID(rawID)
+            guard let display = displays.first(where: { $0.id == id && $0.isVirtual }) else {
+                errorMessage = t("unknown_virtual_display_id", rawID as CVarArg)
+                return
+            }
+            removeVirtualDisplay(display)
+
+        case .remove(.name(let name)):
+            guard let display = displays.first(where: { $0.isVirtual && $0.name == name }) else {
+                errorMessage = t("unknown_virtual_display_name", name as CVarArg)
+                return
+            }
+            removeVirtualDisplay(display)
+
+        case .reconfigure(let rawID, let request):
+            let id = CGDirectDisplayID(rawID)
+            guard let display = displays.first(where: { $0.id == id && $0.isVirtual }) else {
+                errorMessage = t("unknown_virtual_display_id", rawID as CVarArg)
+                return
+            }
+            // Only propagate a rename if the caller actually passed one.
+            let explicitName = request.name == VirtualDisplayRequest().name ? nil : request.name
+            reconfigureVirtualDisplay(
+                display,
+                width: request.width,
+                height: request.height,
+                refreshRate: request.refreshRate,
+                hiDPI: request.hiDPI,
+                name: explicitName
+            )
         }
     }
 

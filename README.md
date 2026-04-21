@@ -54,9 +54,59 @@ git clone https://github.com/SamuelRioTz/SimpleDisplay.git
 cd SimpleDisplay
 make dmg
 open SimpleDisplay.app
+
+# Optional: install the CLI for automation
+make cli-install          # /usr/local/bin/simpledisplayctl
 ```
 
 Requires Xcode Command Line Tools (`xcode-select --install`).
+
+## Automation
+
+SimpleDisplay exposes a `simpledisplay://` URL scheme and a `simpledisplayctl`
+CLI so the app can be driven from shell scripts, Shortcuts, SSH, or launchd
+agents. The URL scheme activates the app if it is not already running — there
+is no separate background process to keep alive.
+
+### URL scheme
+
+| URL                                                                     | Effect                              |
+| ----------------------------------------------------------------------- | ----------------------------------- |
+| `simpledisplay://open`                                                  | Focus the menu bar.                 |
+| `simpledisplay://create?width=N&height=N[&name=S][&refresh=N][&hidpi=true]` | Create a virtual display.           |
+| `simpledisplay://remove?id=N` or `?name=S`                              | Remove a virtual display.           |
+| `simpledisplay://reconfigure?id=N&width=N&height=N[&refresh=N][&hidpi=true]` | Resize a virtual display in place. |
+
+Values are validated — dimensions clamp to 100–8192, refresh capped at 60 Hz,
+names rejected if they contain control characters — before the app sees them.
+Malformed URLs surface as a one-line banner in the menu bar rather than
+failing silently.
+
+### CLI
+
+```bash
+make cli                  # build .build/apple/Products/Release/simpledisplayctl
+make cli-install          # copy to /usr/local/bin (override with CLI_INSTALL_DIR)
+
+simpledisplayctl create --width 2732 --height 2048 --name "iPad Pro" --hidpi
+simpledisplayctl remove --name "iPad Pro"
+simpledisplayctl reconfigure --id 3 --width 1600 --height 1200
+simpledisplayctl open
+simpledisplayctl status   # exit 0 = installed, 2 = missing; prints pid if running
+```
+
+`simpledisplayctl` is a thin wrapper — every action builds a
+`simpledisplay://` URL and hands it to `/usr/bin/open`. Running the CLI from
+an SSH session drives the remote Mac's local SimpleDisplay.
+
+### Remote usage (SSH)
+
+```bash
+ssh user@mac "simpledisplayctl create --width 2732 --height 2048 --name iPad"
+```
+
+If SimpleDisplay is not installed, `status` reports that before any action
+is attempted so callers can offer to install it first.
 
 ## How it works
 

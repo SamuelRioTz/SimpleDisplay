@@ -2,15 +2,15 @@ import SwiftUI
 
 @main
 struct SimpleDisplayApp: App {
-    @State private var viewModel = DisplayManagerViewModel()
+    @NSApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
     @State private var locale = LocaleManager()
 
     var body: some Scene {
         MenuBarExtra {
             MenuBarContentView()
-                .environment(viewModel)
+                .environment(appDelegate.viewModel)
                 .environment(locale)
-                .onAppear { viewModel.locale = locale }
+                .onAppear { appDelegate.viewModel.locale = locale }
         } label: {
             Label("SimpleDisplay", systemImage: "display")
         }
