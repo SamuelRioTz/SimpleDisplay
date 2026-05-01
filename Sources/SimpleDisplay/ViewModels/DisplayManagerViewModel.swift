@@ -41,6 +41,7 @@ final class DisplayManagerViewModel {
 
     private let displayService = DisplayService()
     private let virtualService = VirtualDisplayService()
+    private let statePersistence = DisplayStatePersistence()
     private var changeToken: DisplayChangeToken?
     private var screenChangeObserver: Any?
     private var sleepObserver: Any?
@@ -62,6 +63,7 @@ final class DisplayManagerViewModel {
         }
         refresh()
         displayService.fixDuplicateDisplayProfiles(displays: displays)
+        Task { await applyPersistedState() }
         registerForDisplayChanges()
         registerForSleepWake()
     }
@@ -135,6 +137,9 @@ final class DisplayManagerViewModel {
                 errorMessage = error.localizedDescription
                 return
             }
+            if let uuid = display.uuid {
+                statePersistence.recordMain(uuid: uuid)
+            }
             try? await Task.sleep(for: .milliseconds(500))
             refresh()
         }
@@ -160,10 +165,16 @@ final class DisplayManagerViewModel {
                     errorMessage = error.localizedDescription
                     return
                 }
+                if let uuid = display.uuid {
+                    statePersistence.recordEnabled(uuid: uuid)
+                }
             } else {
                 do { try displayService.disableDisplay(display.id, allDisplays: displays) } catch {
                     errorMessage = error.localizedDescription
                     return
+                }
+                if let uuid = display.uuid {
+                    statePersistence.recordDisabled(uuid: uuid)
                 }
             }
 
@@ -179,6 +190,9 @@ final class DisplayManagerViewModel {
                         busyMessage = t("re_enabling_format", target.name)
                         do {
                             try displayService.enableDisplay(target.id)
+                            if let uuid = target.uuid {
+                                statePersistence.recordEnabled(uuid: uuid)
+                            }
                             try? await Task.sleep(for: .milliseconds(500))
                             refresh()
                         } catch {
@@ -390,6 +404,72 @@ final class DisplayManagerViewModel {
             logger.info("Wake: re-disabled display '\(display.name)'")
         }
         refresh()
+    }
+
+    // MARK: - Persisted State Restore
+
+    /// Re-apply previously-saved disable/main flags to whatever physical displays
+    /// are currently online. Runs once at startup, in an async Task so it can
+    /// pause between CG operations — `disableDisplay` reconfigures the
+    /// display tree and the system needs a moment to settle before the next
+    /// call uses fresh CG state.
+    ///
+    /// Mirroring still uses `.forSession` as a crash-recovery safety net; this
+    /// async re-application is what makes the user's choice survive logout/reboot.
+    private func applyPersistedState() async {
+        let saved = statePersistence.loadAll()
+        guard !saved.isEmpty else { return }
+
+        let savedByUUID = Dictionary(uniqueKeysWithValues: saved.map { ($0.uuid, $0) })
+
+        // Step 1: restore the saved main display first. Doing this before the
+        // disables avoids a chain reaction where `disableDisplay` of the current
+        // main forces an arbitrary main-transfer that we'd then have to undo.
+        if let savedMain = saved.first(where: { $0.isMain }),
+           let target = displays.first(where: { $0.uuid == savedMain.uuid }),
+           target.isActive,
+           !target.isMain {
+            do {
+                try displayService.setMainDisplay(target.id)
+                logger.info("Restored main display '\(target.name)'")
+                try? await Task.sleep(for: .milliseconds(400))
+                refresh()
+            } catch {
+                logger.warning("Could not restore main display: \(error.localizedDescription)")
+            }
+        }
+
+        // Step 2: disable each saved-disabled display, one at a time, refreshing
+        // between calls so each `disableDisplay` sees live state. Skip if the
+        // operation would leave zero active displays.
+        let toDisableUUIDs: [String] = displays.compactMap { display in
+            guard
+                let uuid = display.uuid,
+                let entry = savedByUUID[uuid],
+                entry.isDisabled,
+                !display.isMirrored
+            else { return nil }
+            return uuid
+        }
+
+        for uuid in toDisableUUIDs {
+            guard let display = displays.first(where: { $0.uuid == uuid }), !display.isMirrored else {
+                continue
+            }
+            let activeCount = displays.filter { $0.isActive }.count
+            guard activeCount > 1 else {
+                logger.info("Skipping persisted disable of '\(display.name)' — would leave zero active")
+                continue
+            }
+            do {
+                try displayService.disableDisplay(display.id, allDisplays: displays)
+                logger.info("Restored disabled state on '\(display.name)'")
+                try? await Task.sleep(for: .milliseconds(400))
+                refresh()
+            } catch {
+                logger.warning("Could not restore disabled state on '\(display.name)': \(error.localizedDescription)")
+            }
+        }
     }
 
 }

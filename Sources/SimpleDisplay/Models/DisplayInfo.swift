@@ -3,6 +3,7 @@ import Foundation
 
 struct DisplayInfo: Identifiable, Equatable {
     let id: CGDirectDisplayID
+    let uuid: String?
     let name: String
     let currentMode: DisplayMode
     let availableModes: [DisplayMode]
@@ -18,7 +19,7 @@ struct DisplayInfo: Identifiable, Equatable {
 
     func with(name: String, isVirtual: Bool) -> DisplayInfo {
         DisplayInfo(
-            id: id, name: name, currentMode: currentMode,
+            id: id, uuid: uuid, name: name, currentMode: currentMode,
             availableModes: availableModes, isVirtual: isVirtual,
             isBuiltIn: isBuiltIn, isMain: isMain, isMirrored: isMirrored,
             mirroredToDisplayID: mirroredToDisplayID,

@@ -73,6 +73,7 @@ final class DisplayService {
 
         return DisplayInfo(
             id: displayID,
+            uuid: uuid(for: displayID),
             name: nameMap[displayID] ?? "Display \(displayID)",
             currentMode: currentMode,
             availableModes: allModes,
@@ -84,6 +85,15 @@ final class DisplayService {
             physicalSize: CGDisplayScreenSize(displayID),
             backingScaleFactor: scaleMap[displayID] ?? 1.0
         )
+    }
+
+    /// Stable per-display UUID string usable across launches and reboots.
+    /// `CGDirectDisplayID` itself is reassigned on topology changes; this UUID is not.
+    func uuid(for displayID: CGDirectDisplayID) -> String? {
+        guard let cfUUID = CGDisplayCreateUUIDFromDisplayID(displayID)?.takeRetainedValue() else {
+            return nil
+        }
+        return CFUUIDCreateString(nil, cfUUID) as String?
     }
 
     // MARK: - Change Resolution

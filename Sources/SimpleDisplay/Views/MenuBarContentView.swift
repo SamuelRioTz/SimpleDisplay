@@ -146,6 +146,9 @@ struct MenuBarContentView: View {
             .frame(maxWidth: .infinity)
             .padding(.vertical, 40)
         } else {
+            // Note: minHeight is required because SwiftUI MenuBarExtra (.window) can
+            // size the popover to 0 height when the ScrollView's lazy content reports
+            // no intrinsic size at first evaluation, leaving the rows invisible.
             ScrollView {
                 LazyVStack(spacing: 4) {
                     ForEach(viewModel.displays) { display in
@@ -155,7 +158,7 @@ struct MenuBarContentView: View {
                 .padding(.vertical, 8)
                 .padding(.horizontal, 4)
             }
-            .frame(maxHeight: 450)
+            .frame(minHeight: 200, maxHeight: 450)
         }
 
         Divider()
