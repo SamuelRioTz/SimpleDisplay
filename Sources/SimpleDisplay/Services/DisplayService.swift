@@ -2,12 +2,18 @@ import AppKit
 import ColorSync
 import CoreGraphics
 import Foundation
+import VirtualDisplayBridge
 import os
 
 private let logger = Logger(subsystem: "app.simpledisplay", category: "DisplayService")
 
 @MainActor
 final class DisplayService {
+
+    /// Last-known friendly name per display UUID. A disabled display drops out
+    /// of `NSScreen.screens`, so without this cache its row would revert to a
+    /// generic "Display N" label while disabled.
+    private var nameCache: [String: String] = [:]
 
     // MARK: - Enumerate Displays
 
@@ -42,10 +48,23 @@ final class DisplayService {
         nameMap: [CGDirectDisplayID: String],
         scaleMap: [CGDirectDisplayID: Double]
     ) -> DisplayInfo? {
-        guard let currentCGMode = CGDisplayCopyDisplayMode(displayID) else { return nil }
+        // A display disabled via CGSConfigureDisplayEnabled stays online and
+        // addressable but is no longer active on the desktop.
+        let isEnabled = CGDisplayIsActive(displayID) != 0
 
-        let mirrorOf = CGDisplayMirrorsDisplay(displayID)
-        let isMirrored = mirrorOf != kCGNullDirectDisplay
+        let displayUUID = uuid(for: displayID)
+
+        // Resolve a friendly name. A disabled display is absent from
+        // NSScreen.screens, so fall back to the last name we saw for this UUID.
+        let resolvedName: String
+        if let liveName = nameMap[displayID] {
+            resolvedName = liveName
+            if let displayUUID { nameCache[displayUUID] = liveName }
+        } else if let displayUUID, let cached = nameCache[displayUUID] {
+            resolvedName = cached
+        } else {
+            resolvedName = "Display \(displayID)"
+        }
 
         let options = [kCGDisplayShowDuplicateLowResolutionModes: true] as CFDictionary
         let allModes = (CGDisplayCopyAllDisplayModes(displayID, options) as? [CGDisplayMode] ?? [])
@@ -62,26 +81,37 @@ final class DisplayService {
             }
             .sorted { ($0.width, $0.height, $0.refreshRate) > ($1.width, $1.height, $1.refreshRate) }
 
-        let currentMode = DisplayMode(
-            width: currentCGMode.width,
-            height: currentCGMode.height,
-            pixelWidth: currentCGMode.pixelWidth,
-            pixelHeight: currentCGMode.pixelHeight,
-            refreshRate: currentCGMode.refreshRate,
-            isHiDPI: currentCGMode.pixelWidth != currentCGMode.width
-        )
+        // CGDisplayCopyDisplayMode can return nil for a disabled display. Keep
+        // the row alive with a placeholder so the user can re-enable it; an
+        // active display with no mode is genuinely unusable, so drop it.
+        let currentMode: DisplayMode
+        if let currentCGMode = CGDisplayCopyDisplayMode(displayID) {
+            currentMode = DisplayMode(
+                width: currentCGMode.width,
+                height: currentCGMode.height,
+                pixelWidth: currentCGMode.pixelWidth,
+                pixelHeight: currentCGMode.pixelHeight,
+                refreshRate: currentCGMode.refreshRate,
+                isHiDPI: currentCGMode.pixelWidth != currentCGMode.width
+            )
+        } else if !isEnabled, let fallback = allModes.first {
+            currentMode = fallback
+        } else if !isEnabled {
+            currentMode = DisplayMode(width: 0, height: 0, pixelWidth: 0, pixelHeight: 0, refreshRate: 0, isHiDPI: false)
+        } else {
+            return nil
+        }
 
         return DisplayInfo(
             id: displayID,
-            uuid: uuid(for: displayID),
-            name: nameMap[displayID] ?? "Display \(displayID)",
+            uuid: displayUUID,
+            name: resolvedName,
             currentMode: currentMode,
             availableModes: allModes,
             isVirtual: false,
             isBuiltIn: CGDisplayIsBuiltin(displayID) != 0,
             isMain: CGDisplayIsMain(displayID) != 0,
-            isMirrored: isMirrored,
-            mirroredToDisplayID: mirrorOf,
+            isEnabled: isEnabled,
             physicalSize: CGDisplayScreenSize(displayID),
             backingScaleFactor: scaleMap[displayID] ?? 1.0
         )
@@ -166,77 +196,46 @@ final class DisplayService {
         }
     }
 
-    // MARK: - Enable / Disable Display (via mirroring)
+    // MARK: - Enable / Disable Display
 
-    /// Disables a display by mirroring it to another active display.
-    /// Uses .forSession so mirroring auto-reverts on logout/reboot as a safety net.
+    /// Disables a display for real via the private `CGSConfigureDisplayEnabled`
+    /// API — the display goes dark and leaves the desktop entirely, rather than
+    /// mirroring another screen. If the target is the current main display, main
+    /// is first transferred to another active display so macOS doesn't pick one
+    /// arbitrarily.
     func disableDisplay(_ displayID: CGDirectDisplayID, allDisplays: [DisplayInfo]) throws {
-        let mainDisplay = CGMainDisplayID()
-        let isMain = displayID == mainDisplay
-
-        // Find the best next active display: prefer built-in, then physical, then virtual
-        let candidates = allDisplays.filter { $0.isActive && $0.id != displayID }
-        let otherActive = candidates.first(where: { $0.isBuiltIn })
-            ?? candidates.first(where: { !$0.isVirtual })
-            ?? candidates.first
-
-        if isMain {
-            guard let newMain = otherActive else {
+        if displayID == CGMainDisplayID() {
+            // Find the best next main: prefer built-in, then physical, then virtual.
+            let candidates = allDisplays.filter { $0.isActive && $0.id != displayID }
+            guard let newMain = candidates.first(where: { $0.isBuiltIn })
+                ?? candidates.first(where: { !$0.isVirtual })
+                ?? candidates.first else {
                 throw DisplayError.configurationFailed("No other display available to transfer main")
             }
-
-            // Step 1: Transfer main to the other display
             try setMainDisplay(newMain.id)
-
-            // Step 2: Now mirror the old main (no longer main) to the new main
-            var config2: CGDisplayConfigRef?
-            guard CGBeginDisplayConfiguration(&config2) == .success else {
-                throw DisplayError.configurationFailed("Could not begin mirror configuration")
-            }
-
-            let mirrorErr = CGConfigureDisplayMirrorOfDisplay(config2, displayID, newMain.id)
-            guard mirrorErr == .success else {
-                CGCancelDisplayConfiguration(config2)
-                throw DisplayError.configurationFailed("Mirror failed: \(mirrorErr)")
-            }
-
-            // .forSession: auto-reverts on logout/reboot if app crashes while display is disabled
-            let completeErr = CGCompleteDisplayConfiguration(config2, .forSession)
-            guard completeErr == .success else {
-                CGCancelDisplayConfiguration(config2)
-                throw DisplayError.configurationFailed("Failed to disable main display")
-            }
-        } else {
-            var config: CGDisplayConfigRef?
-            guard CGBeginDisplayConfiguration(&config) == .success else {
-                throw DisplayError.configurationFailed("Could not begin configuration")
-            }
-
-            let err = CGConfigureDisplayMirrorOfDisplay(config, displayID, mainDisplay)
-            guard err == .success else {
-                CGCancelDisplayConfiguration(config)
-                throw DisplayError.configurationFailed("Mirror configuration failed: \(err)")
-            }
-
-            let completeErr = CGCompleteDisplayConfiguration(config, .forSession)
-            guard completeErr == .success else {
-                CGCancelDisplayConfiguration(config)
-                throw DisplayError.configurationFailed("Complete failed: \(completeErr)")
-            }
         }
+        try setDisplayEnabled(displayID, enabled: false)
     }
 
-    /// Enables a display by removing its mirror relationship
+    /// Re-enables a previously disabled display.
     func enableDisplay(_ displayID: CGDirectDisplayID) throws {
+        try setDisplayEnabled(displayID, enabled: true)
+    }
+
+    /// Toggles a display's active state through a CG configuration transaction.
+    /// Uses `.forSession` so the change auto-reverts on logout/reboot if the app
+    /// crashes mid-operation; the persisted-state restore on launch is what makes
+    /// the user's choice durable across reboots.
+    private func setDisplayEnabled(_ displayID: CGDirectDisplayID, enabled: Bool) throws {
         var config: CGDisplayConfigRef?
         guard CGBeginDisplayConfiguration(&config) == .success else {
             throw DisplayError.configurationFailed("Could not begin configuration")
         }
 
-        let err = CGConfigureDisplayMirrorOfDisplay(config, displayID, kCGNullDirectDisplay)
+        let err = CGSConfigureDisplayEnabled(config, displayID, enabled)
         guard err == .success else {
             CGCancelDisplayConfiguration(config)
-            throw DisplayError.configurationFailed("Unmirror configuration failed: \(err)")
+            throw DisplayError.configurationFailed("CGSConfigureDisplayEnabled failed: \(err.rawValue)")
         }
 
         let completeErr = CGCompleteDisplayConfiguration(config, .forSession)
@@ -261,7 +260,7 @@ final class DisplayService {
     /// Assigning a known profile via ColorSync API breaks the cycle without admin privileges.
     func fixDuplicateDisplayProfiles(displays: [DisplayInfo]) {
         // Find physical displays with duplicate names (identical monitors)
-        let physicalDisplays = displays.filter { !$0.isVirtual && !$0.isMirrored }
+        let physicalDisplays = displays.filter { !$0.isVirtual && $0.isActive }
         let nameCount = physicalDisplays.reduce(into: [String: Int]()) { $0[$1.name, default: 0] += 1 }
         let duplicateNames = nameCount.filter { $0.value > 1 }.map { $0.key }
         guard !duplicateNames.isEmpty else { return }

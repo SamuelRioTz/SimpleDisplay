@@ -10,19 +10,20 @@ struct DisplayInfo: Identifiable, Equatable {
     let isVirtual: Bool
     let isBuiltIn: Bool
     let isMain: Bool
-    let isMirrored: Bool
-    let mirroredToDisplayID: CGDirectDisplayID
+    /// True when the display is active on the desktop. False when it has been
+    /// disabled via `CGSConfigureDisplayEnabled` — the display is still
+    /// connected and addressable, just not part of the active desktop.
+    let isEnabled: Bool
     let physicalSize: CGSize
     let backingScaleFactor: Double
 
-    var isActive: Bool { !isMirrored }
+    var isActive: Bool { isEnabled }
 
     func with(name: String, isVirtual: Bool) -> DisplayInfo {
         DisplayInfo(
             id: id, uuid: uuid, name: name, currentMode: currentMode,
             availableModes: availableModes, isVirtual: isVirtual,
-            isBuiltIn: isBuiltIn, isMain: isMain, isMirrored: isMirrored,
-            mirroredToDisplayID: mirroredToDisplayID,
+            isBuiltIn: isBuiltIn, isMain: isMain, isEnabled: isEnabled,
             physicalSize: physicalSize, backingScaleFactor: backingScaleFactor
         )
     }

@@ -48,9 +48,6 @@ final class DisplayManagerViewModel {
     private var wakeObserver: Any?
     private var debounceRefreshTask: Task<Void, Never>?
 
-    /// Tracks displays that were mirrored (disabled) before sleep, to re-mirror after wake
-    private var mirroredBeforeSleep: [CGDirectDisplayID] = []
-
     init() {
         virtualService.onDisplayTerminated = { [weak self] id in
             self?.virtualDisplayIDs.remove(id)
@@ -153,22 +150,15 @@ final class DisplayManagerViewModel {
 
     func toggleDisplay(_ display: DisplayInfo) {
         guard !isBusy else { return }
+        let wasEnabled = display.isActive
         isBusy = true
-        busyMessage = display.isMirrored
-            ? t("enabling_format", display.name)
-            : t("disabling_format", display.name)
+        busyMessage = wasEnabled
+            ? t("disabling_format", display.name)
+            : t("enabling_format", display.name)
         Task {
             defer { isBusy = false; busyMessage = nil }
 
-            if display.isMirrored {
-                do { try displayService.enableDisplay(display.id) } catch {
-                    errorMessage = error.localizedDescription
-                    return
-                }
-                if let uuid = display.uuid {
-                    statePersistence.recordEnabled(uuid: uuid)
-                }
-            } else {
+            if wasEnabled {
                 do { try displayService.disableDisplay(display.id, allDisplays: displays) } catch {
                     errorMessage = error.localizedDescription
                     return
@@ -176,13 +166,21 @@ final class DisplayManagerViewModel {
                 if let uuid = display.uuid {
                     statePersistence.recordDisabled(uuid: uuid)
                 }
+            } else {
+                do { try displayService.enableDisplay(display.id) } catch {
+                    errorMessage = error.localizedDescription
+                    return
+                }
+                if let uuid = display.uuid {
+                    statePersistence.recordEnabled(uuid: uuid)
+                }
             }
 
             try? await Task.sleep(for: .milliseconds(500))
             refresh()
 
             // Safety: re-enable a display if all got disabled
-            if !display.isMirrored {
+            if wasEnabled {
                 let active = displays.filter { $0.isActive }
                 if active.isEmpty {
                     let fallback = displays.first(where: { $0.isBuiltIn }) ?? displays.first
@@ -376,34 +374,19 @@ final class DisplayManagerViewModel {
         }
     }
 
-    /// Before sleep: unmirror all mirrored displays to prevent freeze on wake
+    /// Before sleep: just clear any in-flight busy state. Unlike the old
+    /// mirror-based disable, a display disabled via CGSConfigureDisplayEnabled
+    /// survives sleep cleanly, so no pre-sleep teardown is required.
     private func handleSleep() {
         isBusy = false
         busyMessage = nil
-
-        mirroredBeforeSleep = displays.filter { $0.isMirrored }.map { $0.id }
-        for id in mirroredBeforeSleep {
-            try? displayService.enableDisplay(id)
-        }
-        if !mirroredBeforeSleep.isEmpty {
-            logger.info("Sleep: temporarily enabled \(self.mirroredBeforeSleep.count) mirrored displays")
-        }
     }
 
-    /// After wake: re-mirror displays that were disabled before sleep
+    /// After wake: refresh, then re-apply persisted state in case macOS
+    /// re-activated a display that the user had disabled.
     private func handleWake() {
         refresh()
-        guard !mirroredBeforeSleep.isEmpty else { return }
-
-        let toRemirror = mirroredBeforeSleep
-        mirroredBeforeSleep = []
-
-        for id in toRemirror {
-            guard let display = displays.first(where: { $0.id == id && $0.isActive }) else { continue }
-            try? displayService.disableDisplay(id, allDisplays: displays)
-            logger.info("Wake: re-disabled display '\(display.name)'")
-        }
-        refresh()
+        Task { await applyPersistedState() }
     }
 
     // MARK: - Persisted State Restore
@@ -447,13 +430,13 @@ final class DisplayManagerViewModel {
                 let uuid = display.uuid,
                 let entry = savedByUUID[uuid],
                 entry.isDisabled,
-                !display.isMirrored
+                display.isActive
             else { return nil }
             return uuid
         }
 
         for uuid in toDisableUUIDs {
-            guard let display = displays.first(where: { $0.uuid == uuid }), !display.isMirrored else {
+            guard let display = displays.first(where: { $0.uuid == uuid }), display.isActive else {
                 continue
             }
             let activeCount = displays.filter { $0.isActive }.count

@@ -53,7 +53,7 @@ struct DisplayRowView: View {
                     if display.isVirtual {
                         BadgeView(text: locale.t("badge_virtual"), color: .purple)
                     }
-                    if display.isMirrored {
+                    if !display.isActive {
                         BadgeView(text: locale.t("badge_disabled"), color: .orange)
                     }
                 }

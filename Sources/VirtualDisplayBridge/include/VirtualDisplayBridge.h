@@ -64,4 +64,19 @@ NS_ASSUME_NONNULL_BEGIN
 
 @end
 
+// MARK: - Private CoreGraphics (CGS) display enable/disable
+//
+// CGSConfigureDisplayEnabled is an undocumented CoreGraphics Server API that
+// activates or deactivates a display at the window-server level. A disabled
+// display stays connected and addressable — it still appears in
+// CGGetOnlineDisplayList, but CGDisplayIsActive() returns false and it no
+// longer occupies any desktop space. This is the same mechanism `displayplacer`
+// uses for `enabled:false`, and unlike mirroring it is a true disable.
+//
+// Wrap calls in a CGBeginDisplayConfiguration / CGCompleteDisplayConfiguration
+// transaction, exactly like the public CGConfigureDisplay* APIs.
+extern CGError CGSConfigureDisplayEnabled(CGDisplayConfigRef _Nullable config,
+                                          CGDirectDisplayID display,
+                                          bool enabled);
+
 NS_ASSUME_NONNULL_END
