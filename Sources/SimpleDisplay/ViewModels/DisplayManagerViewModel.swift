@@ -160,6 +160,20 @@ final class DisplayManagerViewModel {
         refresh()
     }
 
+    /// Re-applies a display mode after a display has been brought back online,
+    /// since `CGSConfigureDisplayEnabled` can re-enable a display at a default
+    /// (often non-HiDPI) mode. No-op if the display is gone or already matches.
+    private func restoreMode(_ mode: DisplayMode, for id: CGDirectDisplayID) {
+        guard let current = displays.first(where: { $0.id == id && $0.isActive }) else { return }
+        guard current.currentMode != mode else { return }
+        do {
+            try displayService.setDisplayMode(mode, for: id)
+            refresh()
+        } catch {
+            logger.warning("Could not restore display mode after enable: \(error.localizedDescription)")
+        }
+    }
+
     // MARK: - Resolution Change
 
     func changeResolution(of display: DisplayInfo, to mode: DisplayMode) {
@@ -200,6 +214,9 @@ final class DisplayManagerViewModel {
     func toggleDisplay(_ display: DisplayInfo) {
         guard !isBusy else { return }
         let wasEnabled = display.isActive
+        // When re-enabling, macOS brings the display back at a default mode that
+        // can drop HiDPI. Remember the mode it had so we can restore it.
+        let modeToRestore: DisplayMode? = (!wasEnabled && !display.isPlaceholder) ? display.currentMode : nil
         isBusy = true
         busyMessage = wasEnabled
             ? t("disabling_format", display.name)
@@ -230,6 +247,11 @@ final class DisplayManagerViewModel {
             }
 
             await settleAndRefresh()
+
+            // Restore the pre-disable mode if re-enabling reset it (e.g. HiDPI → non-HiDPI).
+            if let modeToRestore {
+                restoreMode(modeToRestore, for: display.id)
+            }
 
             // Safety: re-enable a display if all got disabled
             if wasEnabled {
