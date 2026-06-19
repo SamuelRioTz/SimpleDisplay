@@ -27,6 +27,32 @@ struct DisplayInfo: Identifiable, Equatable {
             physicalSize: physicalSize, backingScaleFactor: backingScaleFactor
         )
     }
+
+    /// A copy marked disabled, retaining the live mode/name info. Used to keep a
+    /// row visible after a disabled display drops out of the online list.
+    func asDisabledGhost() -> DisplayInfo {
+        DisplayInfo(
+            id: id, uuid: uuid, name: name, currentMode: currentMode,
+            availableModes: availableModes, isVirtual: isVirtual,
+            isBuiltIn: isBuiltIn, isMain: false, isEnabled: false,
+            physicalSize: physicalSize, backingScaleFactor: backingScaleFactor
+        )
+    }
+
+    /// Minimal disabled row reconstructed from persisted identity alone, when no
+    /// live CoreGraphics info is available (e.g. a display disabled in a prior
+    /// session that never came back online). `currentMode` is a 0×0 sentinel.
+    static func disabledPlaceholder(id: CGDirectDisplayID, uuid: String, name: String) -> DisplayInfo {
+        DisplayInfo(
+            id: id, uuid: uuid, name: name,
+            currentMode: DisplayMode(width: 0, height: 0, pixelWidth: 0, pixelHeight: 0, refreshRate: 0, isHiDPI: false),
+            availableModes: [], isVirtual: false, isBuiltIn: false,
+            isMain: false, isEnabled: false, physicalSize: .zero, backingScaleFactor: 1.0
+        )
+    }
+
+    /// True for a reconstructed placeholder row that has no real mode info.
+    var isPlaceholder: Bool { isEnabled == false && currentMode.width == 0 }
 }
 
 struct DisplayMode: Identifiable, Equatable, Hashable {

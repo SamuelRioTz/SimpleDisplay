@@ -1,3 +1,4 @@
+import CoreGraphics
 import Foundation
 import os
 
@@ -7,6 +8,12 @@ struct PersistedDisplayState: Codable {
     let uuid: String
     var isDisabled: Bool
     var isMain: Bool
+    /// Last-known display ID and name, captured when the display was disabled.
+    /// A CGSConfigureDisplayEnabled-disabled display leaves the online list, so
+    /// these let us rebuild a re-enableable row after an app restart. Optional
+    /// for backward compatibility with state written by older versions.
+    var lastKnownID: UInt32?
+    var name: String?
 }
 
 @MainActor
@@ -22,8 +29,12 @@ final class DisplayStatePersistence {
         loadConfigs().first { $0.uuid == uuid }
     }
 
-    func recordDisabled(uuid: String) {
-        upsert(uuid: uuid) { $0.isDisabled = true }
+    func recordDisabled(uuid: String, id: CGDirectDisplayID, name: String) {
+        upsert(uuid: uuid) {
+            $0.isDisabled = true
+            $0.lastKnownID = id
+            $0.name = name
+        }
     }
 
     func recordEnabled(uuid: String) {

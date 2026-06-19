@@ -48,6 +48,13 @@ final class DisplayManagerViewModel {
     private var wakeObserver: Any?
     private var debounceRefreshTask: Task<Void, Never>?
 
+    /// Last-known info, keyed by UUID, for displays we disabled that have since
+    /// dropped out of the online display list. A display disabled via
+    /// `CGSConfigureDisplayEnabled` is removed from `CGGetOnlineDisplayList`
+    /// entirely, so we synthesize a row from this cache to keep it visible and
+    /// re-enableable rather than letting it silently disappear.
+    private var disabledGhosts: [String: DisplayInfo] = [:]
+
     init() {
         virtualService.onDisplayTerminated = { [weak self] id in
             self?.virtualDisplayIDs.remove(id)
@@ -57,6 +64,13 @@ final class DisplayManagerViewModel {
         for entry in restored {
             virtualDisplayIDs.insert(entry.id)
             virtualDisplayNames[entry.id] = entry.name
+        }
+        // Seed ghost rows for displays disabled in a previous session so they
+        // remain re-enableable even if macOS never brought them back online.
+        for entry in statePersistence.loadAll() where entry.isDisabled {
+            if let id = entry.lastKnownID, let name = entry.name {
+                disabledGhosts[entry.uuid] = .disabledPlaceholder(id: id, uuid: entry.uuid, name: name)
+            }
         }
         refresh()
         displayService.fixDuplicateDisplayProfiles(displays: displays)
@@ -92,11 +106,23 @@ final class DisplayManagerViewModel {
         isLoading = true
         let physical = displayService.fetchDisplays()
         let vIDs = virtualDisplayIDs
-        displays = physical.map { info in
+        var result = physical.map { info in
             let isVirtual = vIDs.contains(info.id)
             let displayName = isVirtual ? (virtualDisplayNames[info.id] ?? info.name) : info.name
             return info.with(name: displayName, isVirtual: isVirtual)
         }
+
+        // Any display that is back in the online list is no longer a ghost.
+        let liveUUIDs = Set(result.compactMap { $0.uuid })
+        for uuid in liveUUIDs { disabledGhosts[uuid] = nil }
+
+        // Re-attach rows for disabled displays that have left the online list,
+        // so the user can still toggle them back on.
+        for (uuid, ghost) in disabledGhosts where !liveUUIDs.contains(uuid) {
+            result.append(ghost)
+        }
+
+        displays = result
         isLoading = false
     }
 
@@ -108,6 +134,30 @@ final class DisplayManagerViewModel {
             guard !Task.isCancelled else { return }
             refresh()
         }
+    }
+
+    /// Polls the live display list until it stops changing (or a timeout), then
+    /// refreshes once. Enabling or disabling a display triggers a global display
+    /// reconfiguration in which *other* displays momentarily leave the online
+    /// list. A single fixed-delay refresh can capture that partial snapshot and
+    /// make an unrelated display's row vanish until the next system callback —
+    /// which may never arrive. Waiting for the topology to stabilize avoids
+    /// committing a half-finished state.
+    private func settleAndRefresh(maxPolls: Int = 15) async {
+        var previous: Set<CGDirectDisplayID> = []
+        var stableHits = 0
+        for _ in 0..<maxPolls {
+            try? await Task.sleep(for: .milliseconds(200))
+            let current = Set(displayService.fetchDisplays().map { $0.id })
+            if current == previous {
+                stableHits += 1
+                if stableHits >= 2 { break }   // unchanged across ~400ms
+            } else {
+                stableHits = 0
+                previous = current
+            }
+        }
+        refresh()
     }
 
     // MARK: - Resolution Change
@@ -137,8 +187,7 @@ final class DisplayManagerViewModel {
             if let uuid = display.uuid {
                 statePersistence.recordMain(uuid: uuid)
             }
-            try? await Task.sleep(for: .milliseconds(500))
-            refresh()
+            await settleAndRefresh()
         }
     }
 
@@ -163,8 +212,11 @@ final class DisplayManagerViewModel {
                     errorMessage = error.localizedDescription
                     return
                 }
+                // Retain identity so the row survives the display leaving the
+                // online list (both in-session and across an app restart).
                 if let uuid = display.uuid {
-                    statePersistence.recordDisabled(uuid: uuid)
+                    disabledGhosts[uuid] = display.asDisabledGhost()
+                    statePersistence.recordDisabled(uuid: uuid, id: display.id, name: display.name)
                 }
             } else {
                 do { try displayService.enableDisplay(display.id) } catch {
@@ -172,12 +224,12 @@ final class DisplayManagerViewModel {
                     return
                 }
                 if let uuid = display.uuid {
+                    disabledGhosts[uuid] = nil
                     statePersistence.recordEnabled(uuid: uuid)
                 }
             }
 
-            try? await Task.sleep(for: .milliseconds(500))
-            refresh()
+            await settleAndRefresh()
 
             // Safety: re-enable a display if all got disabled
             if wasEnabled {
@@ -189,10 +241,10 @@ final class DisplayManagerViewModel {
                         do {
                             try displayService.enableDisplay(target.id)
                             if let uuid = target.uuid {
+                                disabledGhosts[uuid] = nil
                                 statePersistence.recordEnabled(uuid: uuid)
                             }
-                            try? await Task.sleep(for: .milliseconds(500))
-                            refresh()
+                            await settleAndRefresh()
                         } catch {
                             errorMessage = t("all_disabled_error", error.localizedDescription)
                         }
@@ -415,8 +467,7 @@ final class DisplayManagerViewModel {
             do {
                 try displayService.setMainDisplay(target.id)
                 logger.info("Restored main display '\(target.name)'")
-                try? await Task.sleep(for: .milliseconds(400))
-                refresh()
+                await settleAndRefresh()
             } catch {
                 logger.warning("Could not restore main display: \(error.localizedDescription)")
             }
@@ -446,9 +497,12 @@ final class DisplayManagerViewModel {
             }
             do {
                 try displayService.disableDisplay(display.id, allDisplays: displays)
+                // Capture identity before the display leaves the online list, and
+                // refresh persisted id/name in case they were missing.
+                disabledGhosts[uuid] = display.asDisabledGhost()
+                statePersistence.recordDisabled(uuid: uuid, id: display.id, name: display.name)
                 logger.info("Restored disabled state on '\(display.name)'")
-                try? await Task.sleep(for: .milliseconds(400))
-                refresh()
+                await settleAndRefresh()
             } catch {
                 logger.warning("Could not restore disabled state on '\(display.name)': \(error.localizedDescription)")
             }

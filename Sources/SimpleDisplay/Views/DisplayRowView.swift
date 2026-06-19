@@ -57,9 +57,11 @@ struct DisplayRowView: View {
                         BadgeView(text: locale.t("badge_disabled"), color: .orange)
                     }
                 }
-                Text(verbatim: display.currentMode.localizedResolutionString(locale))
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+                if !display.isPlaceholder {
+                    Text(verbatim: display.currentMode.localizedResolutionString(locale))
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
             }
 
             Spacer()
