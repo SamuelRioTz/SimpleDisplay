@@ -93,8 +93,10 @@ final class VirtualDisplayService {
         var modeHeight: Int?
         var modeHiDPI: Bool?
 
-        /// Maximum supported refresh rate for CGVirtualDisplay
-        static let maxRefreshRate: Double = 60.0
+        /// Highest refresh rate a virtual display may be configured with.
+        /// `CGVirtualDisplay` honours the requested rate (verified up to ~488 Hz on
+        /// an M1 Mac mini); 240 is the intended ceiling here.
+        static let maxRefreshRate: Double = 240.0
         /// Minimum resolution dimension
         static let minDimension: Int = 100
         /// Maximum resolution dimension

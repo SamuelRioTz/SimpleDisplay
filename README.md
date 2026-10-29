@@ -78,7 +78,7 @@ is no separate background process to keep alive.
 | `simpledisplay://mode?id=N` or `?name=S` `&width=N&height=N[&hidpi=true][&refresh=N]` | Switch a display (physical or virtual) to one of the modes it offers; `hidpi` picks the Retina "looks like" variant, omitted keeps the current scale and rate. |
 | `simpledisplay://status`                                                | Write the display list as JSON to `/tmp/simpledisplay-status.json`. |
 
-Values are validated — dimensions clamp to 100–8192, refresh capped at 60 Hz,
+Values are validated — dimensions clamp to 100–8192, refresh capped at 240 Hz,
 names rejected if they contain control characters — before the app sees them.
 Malformed URLs surface as a one-line banner in the menu bar rather than
 failing silently.
@@ -137,7 +137,7 @@ SimpleDisplay uses Apple's private `CGVirtualDisplay` API to create virtual moni
 ## Known limitations
 
 - Uses private Apple APIs — **cannot be distributed on the Mac App Store**
-- Virtual display refresh rate is capped at 60Hz (API limitation)
+- Virtual display refresh rate is supported up to 240 Hz (the old 60 Hz limit was an app-side clamp, not a `CGVirtualDisplay` limitation). The private API keeps working far higher — ~488 Hz is the observed ceiling on an M1 Mac mini — so the supported range goes to 240 Hz here.
 - Display identification uses names, so two identical monitors may not be distinguishable in all scenarios
 - The `CGVirtualDisplay` and `CGSConfigureDisplayEnabled` APIs are undocumented and may change or be removed in future macOS versions
 

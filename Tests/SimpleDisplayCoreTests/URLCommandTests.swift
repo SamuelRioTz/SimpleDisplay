@@ -75,8 +75,14 @@ final class URLCommandTests: XCTestCase {
         }
     }
 
-    func testRejectsRefreshAbove60() {
-        assertError("simpledisplay://create?width=1920&height=1080&refresh=120") { err in
+    func testAccepts240HzAndRejectsAbove240() {
+        // 240 Hz is a valid virtual-display rate (the old 60 Hz limit was an
+        // app-side clamp, not a `CGVirtualDisplay` limitation).
+        let cmd = try! parse("simpledisplay://create?width=1920&height=1080&refresh=240")
+        guard case .create(let req) = cmd else { return XCTFail("got \(cmd)") }
+        XCTAssertEqual(req.refreshRate, 240.0)
+
+        assertError("simpledisplay://create?width=1920&height=1080&refresh=241") { err in
             guard case .invalidParameter("refresh", _) = err else { return XCTFail("got \(err)") }
         }
     }

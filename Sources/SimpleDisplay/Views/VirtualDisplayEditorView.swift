@@ -17,6 +17,19 @@ struct VirtualDisplayEditorView: View {
     @State private var width: Int
     @State private var height: Int
     @State private var hiDPI: Bool
+    @State private var refreshRate: Double
+
+    /// Common refresh rates offered in the picker. The underlying private API
+    /// accepts any value up to ~488 Hz; 240 is the supported ceiling here.
+    private static let refreshRateChoices: [Double] = [60, 72, 75, 90, 100, 120, 144, 165, 180, 240]
+
+    /// The picker's options, with the display's own rate folded in so a config
+    /// saved at a non-standard rate still shows a selected value.
+    private var refreshOptions: [Double] {
+        var options = Self.refreshRateChoices
+        if !options.contains(refreshRate) { options.append(refreshRate); options.sort() }
+        return options
+    }
 
     private var isEditing: Bool { editing != nil }
 
@@ -28,11 +41,14 @@ struct VirtualDisplayEditorView: View {
             _width = State(initialValue: saved?.width ?? d.currentMode.width)
             _height = State(initialValue: saved?.height ?? d.currentMode.height)
             _hiDPI = State(initialValue: saved?.hiDPI ?? d.currentMode.isHiDPI)
+            let current = d.currentMode.refreshRate
+            _refreshRate = State(initialValue: saved?.refreshRate ?? (current > 0 ? current : 60))
         } else {
             _name = State(initialValue: "Virtual Display")
             _width = State(initialValue: 1920)
             _height = State(initialValue: 1080)
             _hiDPI = State(initialValue: false)
+            _refreshRate = State(initialValue: 60)
         }
     }
 
@@ -41,7 +57,9 @@ struct VirtualDisplayEditorView: View {
         let baseW = saved?.width ?? d.currentMode.width
         let baseH = saved?.height ?? d.currentMode.height
         let baseHiDPI = saved?.hiDPI ?? d.currentMode.isHiDPI
-        return width != baseW || height != baseH || hiDPI != baseHiDPI || name != d.name
+        let baseRefresh = saved?.refreshRate ?? (d.currentMode.refreshRate > 0 ? d.currentMode.refreshRate : 60)
+        return width != baseW || height != baseH || hiDPI != baseHiDPI
+            || refreshRate != baseRefresh || name != d.name
     }
 
     /// What the desktop will look like: HiDPI renders the panel at 2x, so the
@@ -146,6 +164,20 @@ struct VirtualDisplayEditorView: View {
                     .font(.caption2).foregroundStyle(.secondary)
                     .frame(maxWidth: .infinity, alignment: .trailing)
             }
+            GridRow {
+                label("refresh_rate")
+                Picker("", selection: $refreshRate) {
+                    ForEach(refreshOptions, id: \.self) { rate in
+                        Text(verbatim: "\(Int(rate)) Hz").tag(rate)
+                    }
+                }
+                .pickerStyle(.menu)
+                .labelsHidden()
+                .frame(width: 120)
+                Text(verbatim: locale.t("refresh_rate_help"))
+                    .font(.caption2).foregroundStyle(.secondary)
+                    .frame(maxWidth: .infinity, alignment: .trailing)
+            }
             if let d = editing {
                 GridRow {
                     label("active")
@@ -227,7 +259,7 @@ struct VirtualDisplayEditorView: View {
                 Button {
                     viewModel.reconfigureVirtualDisplay(
                         d, width: width, height: height,
-                        hiDPI: hiDPI, name: name
+                        refreshRate: refreshRate, hiDPI: hiDPI, name: name
                     )
                 } label: {
                     Text(verbatim: locale.t("apply_format", width, height))
@@ -245,7 +277,8 @@ struct VirtualDisplayEditorView: View {
 
                 Button {
                     viewModel.newDisplayConfig = VirtualDisplayService.VirtualDisplayConfig(
-                        name: name, width: width, height: height, hiDPI: hiDPI
+                        name: name, width: width, height: height,
+                        refreshRate: refreshRate, hiDPI: hiDPI
                     )
                     viewModel.createVirtualDisplay()
                 } label: {

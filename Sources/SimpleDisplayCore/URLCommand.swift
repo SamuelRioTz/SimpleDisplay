@@ -382,7 +382,7 @@ extension URLCommand {
         if r.name != VirtualDisplayRequest().name {
             items.append(URLQueryItem(name: "name", value: r.name))
         }
-        if r.refreshRate != 60.0 {
+        if r.refreshRate != VirtualDisplayRequest.defaultRefreshRate {
             items.append(URLQueryItem(name: "refresh", value: String(r.refreshRate)))
         }
         if r.hiDPI {

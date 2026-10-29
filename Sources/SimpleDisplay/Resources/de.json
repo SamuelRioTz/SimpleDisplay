@@ -47,6 +47,8 @@
   "zoom_1x": "1x",
   "zoom_2x": "2x Retina",
   "looks_like_format": "sieht aus wie %@",
+  "refresh_rate": "Bildwiederholrate",
+  "refresh_rate_help": "60–240 Hz",
   "badge_mirror_of_format": "Spiegel von %@",
   "mirroring_format": "%@ wird gespiegelt...",
   "unmirroring_format": "Spiegelung von %@ wird beendet...",

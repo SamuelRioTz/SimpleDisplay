@@ -80,7 +80,7 @@
   "lim_title": "Known limitations",
   "lim_desc": "SimpleDisplay uses private Apple APIs. Here's what that means in practice.",
   "lim_1": "Cannot be distributed on the Mac App Store — private APIs are not allowed by Apple's review guidelines.",
-  "lim_2": "Virtual display refresh rate is capped at 60 Hz (API limitation).",
+  "lim_2": "Virtual display refresh rate is supported up to 240 Hz (the old 60 Hz cap was an app-side limit, not an API one).",
   "lim_3": "Enable/disable and main-display state are tracked by a stable per-display UUID, but the identical-monitor ColorSync fix and simpledisplayctl remove --name match displays by name, so two monitors with the same name may not be distinguishable there.",
   "lim_4": "The <code style=\"font-size:12px;\">CGVirtualDisplay</code> and <code style=\"font-size:12px;\">CGSConfigureDisplayEnabled</code> APIs are undocumented and may change or be removed in future macOS versions.",
   "lim_5": "Virtual displays can't be mirror sources: on macOS 26 that crashes the window server, so SimpleDisplay refuses it. Mirror a physical display onto a virtual one instead.",

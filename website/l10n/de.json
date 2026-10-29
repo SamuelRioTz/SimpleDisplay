@@ -80,7 +80,7 @@
   "lim_title": "Bekannte Einschränkungen",
   "lim_desc": "SimpleDisplay verwendet private Apple-APIs. Das bedeutet in der Praxis Folgendes.",
   "lim_1": "Kann nicht im Mac App Store vertrieben werden — private APIs sind laut Apples Überprüfungsrichtlinien nicht erlaubt.",
-  "lim_2": "Die Bildwiederholrate virtueller Bildschirme ist auf 60 Hz begrenzt (API-Limitation).",
+  "lim_2": "Die Bildwiederholrate virtueller Bildschirme wird bis 240 Hz unterstützt (die frühere 60-Hz-Grenze war eine App-Einschränkung, keine API-Grenze).",
   "lim_3": "Aktivieren/Deaktivieren und Hauptdisplay werden über eine stabile UUID pro Display gespeichert; der ColorSync-Fix für identische Monitore und simpledisplayctl remove --name arbeiten jedoch mit Namen, sodass zwei gleichnamige Monitore dort nicht immer unterscheidbar sind.",
   "lim_4": "Die APIs <code style=\"font-size:12px;\">CGVirtualDisplay</code> und <code style=\"font-size:12px;\">CGSConfigureDisplayEnabled</code> sind undokumentiert und können sich in künftigen macOS-Versionen ändern oder verschwinden.",
   "lim_5": "Virtuelle Bildschirme können keine Spiegelquelle sein: unter macOS 26 stürzt dabei der Window Server ab, deshalb lehnt SimpleDisplay es ab. Spiegle stattdessen einen physischen Bildschirm auf den virtuellen.",

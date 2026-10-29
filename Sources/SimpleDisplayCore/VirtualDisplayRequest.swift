@@ -16,14 +16,26 @@ public struct VirtualDisplayRequest: Equatable, Sendable {
 
     public static let minDimension = 100
     public static let maxDimension = 8192
-    public static let maxRefreshRate = 60.0
+    /// Highest refresh rate a virtual display may be created with.
+    ///
+    /// This used to be 60 Hz, on the belief that `CGVirtualDisplay` could not do
+    /// better. That belief is wrong: the private API honours whatever refresh rate
+    /// the mode asks for, and the window server drives the virtual display at that
+    /// rate. Verified on an M1 Mac mini (macOS 26): a 1920x1080 mode requested at
+    /// 120 Hz is reported as 120 Hz by `CGDisplayCopyAllDisplayModes` and a
+    /// `CVDisplayLink` fires ~120 times/s. The observed ceiling is ~488 Hz
+    /// (pixel-clock bound), so 240 Hz is well within range and is the supported
+    /// ceiling here.
+    public static let maxRefreshRate = 240.0
+    /// Default when the caller does not ask for a specific rate.
+    public static let defaultRefreshRate = 60.0
     public static let maxNameLength = 64
 
     public init(
         name: String = "Virtual Display",
         width: Int = 1920,
         height: Int = 1080,
-        refreshRate: Double = 60.0,
+        refreshRate: Double = 60.0,   // see `defaultRefreshRate`
         hiDPI: Bool = false
     ) {
         self.name = name

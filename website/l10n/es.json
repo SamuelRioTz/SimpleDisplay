@@ -80,7 +80,7 @@
   "lim_title": "Limitaciones conocidas",
   "lim_desc": "SimpleDisplay usa APIs privadas de Apple. Esto es lo que significa en la práctica.",
   "lim_1": "No puede distribuirse en la Mac App Store — las APIs privadas no están permitidas por las directrices de revisión de Apple.",
-  "lim_2": "La tasa de refresco de pantallas virtuales está limitada a 60 Hz (limitación de la API).",
+  "lim_2": "La tasa de refresco de pantallas virtuales se admite hasta 240 Hz (el límite anterior de 60 Hz era de la app, no de la API).",
   "lim_3": "El estado de activar/desactivar y de pantalla principal se guarda con un UUID estable por display, pero el fix de ColorSync para monitores idénticos y simpledisplayctl remove --name buscan por nombre, así que dos monitores con el mismo nombre pueden no distinguirse ahí.",
   "lim_4": "Las APIs <code style=\"font-size:12px;\">CGVirtualDisplay</code> y <code style=\"font-size:12px;\">CGSConfigureDisplayEnabled</code> no están documentadas y pueden cambiar o desaparecer en futuras versiones de macOS.",
   "lim_5": "Una pantalla virtual no puede espejar a otra: en macOS 26 eso hace crashear el servidor de ventanas, así que SimpleDisplay lo rechaza. Espeja una pantalla física sobre la virtual en su lugar.",
