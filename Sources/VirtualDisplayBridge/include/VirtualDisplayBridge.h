@@ -81,4 +81,10 @@ extern CGError CGSConfigureDisplayEnabled(CGDisplayConfigRef _Nullable config,
                                           CGDirectDisplayID display,
                                           bool enabled);
 
+// Every display the window server knows, including those disabled through
+// CGSConfigureDisplayEnabled, which CGGetOnlineDisplayList leaves out.
+extern CGError CGSGetDisplayList(uint32_t maxDisplays,
+                                 CGDirectDisplayID * _Nullable displays,
+                                 uint32_t * _Nullable displayCount);
+
 NS_ASSUME_NONNULL_END

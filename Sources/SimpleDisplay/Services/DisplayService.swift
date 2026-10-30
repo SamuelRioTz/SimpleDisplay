@@ -45,6 +45,30 @@ final class DisplayService {
         }
     }
 
+    /// Connected physical displays that are off at the window-server level.
+    /// They are absent from `CGGetOnlineDisplayList`, and the view model only
+    /// shows them while it holds a ghost row; a display whose ghost was lost
+    /// (two identical monitors persisted under one ID, a monitor power cycle)
+    /// would otherwise stay dark with no way to turn it back on.
+    func fetchDisabledDisplays() -> [DisplayInfo] {
+        var ids = [CGDirectDisplayID](repeating: 0, count: 32)
+        var count: UInt32 = 0
+        guard CGSGetDisplayList(UInt32(ids.count), &ids, &count) == .success else { return [] }
+        return ids.prefix(Int(count)).compactMap { displayID in
+            // Vendor 0 is a slot left by an unplugged display; an offline
+            // built-in display is a closed lid.
+            guard CGDisplayIsOnline(displayID) == 0,
+                  CGDisplayIsBuiltin(displayID) == 0,
+                  CGDisplayVendorNumber(displayID) != 0
+            else { return nil }
+            // CGDisplayCreateUUIDFromDisplayID returns nil for a disabled
+            // display (seen on macOS 26), so the row may only have its ID.
+            let displayUUID = uuid(for: displayID)
+            let name = displayUUID.flatMap { nameCache[$0] } ?? "Display \(displayID)"
+            return .disabledPlaceholder(id: displayID, uuid: displayUUID, name: name)
+        }
+    }
+
     private func buildDisplayInfo(
         displayID: CGDirectDisplayID,
         nameMap: [CGDirectDisplayID: String],

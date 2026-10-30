@@ -62,7 +62,7 @@ struct DisplayInfo: Identifiable, Equatable {
     /// Minimal disabled row reconstructed from persisted identity alone, when no
     /// live CoreGraphics info is available (e.g. a display disabled in a prior
     /// session that never came back online). `currentMode` is a 0×0 sentinel.
-    static func disabledPlaceholder(id: CGDirectDisplayID, uuid: String, name: String) -> DisplayInfo {
+    static func disabledPlaceholder(id: CGDirectDisplayID, uuid: String?, name: String) -> DisplayInfo {
         DisplayInfo(
             id: id, uuid: uuid, name: name,
             currentMode: DisplayMode(width: 0, height: 0, pixelWidth: 0, pixelHeight: 0, refreshRate: 0, isHiDPI: false),

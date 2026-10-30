@@ -157,6 +157,18 @@ final class DisplayManagerViewModel {
             }
         }
 
+        // A display can be off with no ghost row: its ghost lost an ID
+        // collision, or it was never disabled from this app. Show it anyway so
+        // it can be turned back on.
+        let shownUUIDs = Set(result.compactMap(\.uuid))
+        let shownIDs = Set(result.map(\.id))
+        let persisted = statePersistence.loadAll()
+        for orphan in displayService.fetchDisabledDisplays() where !shownIDs.contains(orphan.id) {
+            if let uuid = orphan.uuid, shownUUIDs.contains(uuid) { continue }
+            let entry = persisted.first { $0.uuid == orphan.uuid } ?? persisted.first { $0.lastKnownID == orphan.id }
+            result.append(orphan.with(name: entry?.name ?? orphan.name, isVirtual: false))
+        }
+
         displays = result
         isLoading = false
     }
